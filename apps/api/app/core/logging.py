@@ -31,6 +31,8 @@ def sanitize_log_event(
 def setup_logging(environment: str = "development") -> None:
     """Configure structlog and standard logging."""
     timestamper = structlog.processors.TimeStamper(fmt="iso")
+    # SDK debug traces can include the entire completion request.
+    logging.getLogger("openai._base_client").setLevel(logging.WARNING)
 
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,

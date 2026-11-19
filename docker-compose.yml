@@ -11,6 +11,9 @@ services:
     environment:
       - PORT=8000
       - TMP_DIR=/tmp/convertit
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-https://ollama.com/v1}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-deepseek-v4.1-flash}
     tmpfs:
       - /tmp/convertit:size=2G,uid=10001,gid=10001,mode=1777
     restart: unless-stopped

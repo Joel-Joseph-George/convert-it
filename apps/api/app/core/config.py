@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     YT_COOKIES_FILE: str | None = None
     YT_PROXY: str | None = None
 
+    OLLAMA_API_KEY: str | None = None
+    OLLAMA_BASE_URL: str = "https://ollama.com/v1"
+    OLLAMA_MODEL: str = "deepseek-v4.1-flash"
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_allowed_origins(cls, value: object) -> list[str]:
