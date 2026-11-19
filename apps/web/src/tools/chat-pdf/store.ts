@@ -1,7 +1,11 @@
 import { create } from 'zustand';
 import type { Index } from './embed.worker';
 
-export interface Message { role: 'user' | 'assistant'; content: string; pages?: number[] }
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  pages?: number[];
+}
 interface ChatState {
   file: File | null;
   status: 'empty' | 'indexing' | 'ready' | 'asking';
@@ -13,7 +17,7 @@ export const useChat = create<ChatState>(() => emptyState);
 
 export async function fingerprint(data: ArrayBuffer) {
   const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Schema version includes the tokenizer, weights, and chunking strategy.
@@ -25,10 +29,16 @@ function openIndex() {
     request.onupgradeneeded = () => request.result.createObjectStore(STORE);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  }).catch((error: unknown) => { database = undefined; throw error; });
+  }).catch((error: unknown) => {
+    database = undefined;
+    throw error;
+  });
   return database;
 }
-async function transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>) {
+async function transaction<T>(
+  mode: IDBTransactionMode,
+  action: (store: IDBObjectStore) => IDBRequest<T>,
+) {
   const db = await openIndex();
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(STORE, mode);
@@ -39,7 +49,7 @@ async function transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjec
   });
 }
 export const readIndex = (key: string): Promise<Index | undefined> =>
-  transaction('readonly', store => store.get(key));
+  transaction('readonly', (store) => store.get(key));
 export const saveIndex = (key: string, index: Index) =>
-  transaction('readwrite', store => store.put(index, key));
-export const clearIndexes = () => transaction('readwrite', store => store.clear());
+  transaction('readwrite', (store) => store.put(index, key));
+export const clearIndexes = () => transaction('readwrite', (store) => store.clear());

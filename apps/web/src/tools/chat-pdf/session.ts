@@ -9,9 +9,15 @@ export class DocumentSession {
   private worker?: Worker;
 
   // Only one indexing or retrieval operation runs in a session at a time.
-  run(work: Work, signal: AbortSignal, progress: (s: string) => void): Promise<Index | Float32Array> {
+  run(
+    work: Work,
+    signal: AbortSignal,
+    progress: (s: string) => void,
+  ): Promise<Index | Float32Array> {
     signal.throwIfAborted();
-    const worker = this.worker ??= new Worker(new URL('./embed.worker.ts', import.meta.url), { type: 'module' });
+    const worker = (this.worker ??= new Worker(new URL('./embed.worker.ts', import.meta.url), {
+      type: 'module',
+    }));
     return new Promise((resolve, reject) => {
       const cleanup = () => {
         signal.removeEventListener('abort', abort);

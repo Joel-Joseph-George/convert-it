@@ -1,9 +1,13 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers';
-import { chunkPages, type Chunk, type PageText } from './chunker';
+import { chunkPages, MAX_TOKENS, type Chunk, type PageText } from './chunker';
 
-export interface Index { chunks: Chunk[]; vectors: Float32Array[] }
+export interface Index {
+  chunks: Chunk[];
+  vectors: Float32Array[];
+}
 export type Work = { pages: PageText[] } | { query: string };
-export type Reply = { progress: string } | { index: Index } | { vector: Float32Array } | { error: string };
+export type Reply =
+  { progress: string } | { index: Index } | { vector: Float32Array } | { error: string };
 
 let engine: FeatureExtractionPipeline | undefined;
 let device: 'webgpu' | 'wasm' = 'gpu' in navigator ? 'webgpu' : 'wasm';
@@ -13,20 +17,34 @@ async function loadEngine() {
   postMessage({ progress: 'Loading local embedding model…' });
   const { env, pipeline } = await import('@huggingface/transformers');
   env.allowRemoteModels = false;
+  env.allowLocalModels = true;
   env.localModelPath = '/vendor/models/';
   const wasm = env.backends.onnx.wasm;
   if (wasm) {
-    wasm.wasmPaths = new URL('/vendor/onnx/', self.location.origin).href;
+    // Keep the runtime's platform choice while serving both files from this site.
+    const baseline =
+      typeof wasm.wasmPaths === 'object' && String(wasm.wasmPaths.mjs).endsWith('threaded.mjs');
+    const name = baseline ? 'ort-wasm-simd-threaded' : 'ort-wasm-simd-threaded.asyncify';
+    const base = new URL('/vendor/onnx/' + name, self.location.origin).href;
+    wasm.wasmPaths = { mjs: base + '.mjs', wasm: base + '.wasm' };
     wasm.numThreads = 1;
   }
-  const create = () => pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-    device, dtype: 'q8',
-    progress_callback(event) {
-      if (event.status === 'progress' && event.total) {
-        postMessage({ progress: `Loading model · ${event.file} · ${Math.round(event.progress)}%` });
-      }
-    },
-  });
+  if (device === 'webgpu') {
+    const gpu = (navigator as Navigator & { gpu: { requestAdapter(): Promise<unknown> } }).gpu;
+    if (!(await gpu.requestAdapter().catch(() => null))) device = 'wasm';
+  }
+  const create = () =>
+    pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+      device,
+      dtype: 'q8',
+      progress_callback(event) {
+        if (event.status === 'progress' && event.total) {
+          postMessage({
+            progress: `Loading model · ${event.file} · ${Math.round(event.progress)}%`,
+          });
+        }
+      },
+    });
   try {
     engine = await create();
   } catch (error) {
@@ -34,7 +52,6 @@ async function loadEngine() {
     device = 'wasm';
     engine = await create();
   }
-  engine.tokenizer.model_max_length = 256;
   return engine;
 }
 
@@ -59,19 +76,28 @@ self.onmessage = async ({ data }: MessageEvent<Work>) => {
   try {
     const model = await loadEngine();
     if ('query' in data) {
-      const [vector] = await embed([data.query]);
+      const ids = model.tokenizer.encode(data.query, { add_special_tokens: false });
+      const query =
+        ids.length <= MAX_TOKENS - 2
+          ? data.query
+          : model.tokenizer.decode(ids.slice(0, MAX_TOKENS - 2));
+      const [vector] = await embed([query]);
       postMessage({ vector });
       return;
     }
-    const chunks = chunkPages(data.pages, text => model.tokenizer.encode(text).length);
+    const chunks = chunkPages(data.pages, (text) => model.tokenizer.encode(text).length);
     const vectors: Float32Array[] = [];
     for (let i = 0; i < chunks.length; i += 16) {
-      vectors.push(...await embed(chunks.slice(i, i + 16).map(chunk => chunk.text)));
+      vectors.push(...(await embed(chunks.slice(i, i + 16).map((chunk) => chunk.text))));
       postMessage({ progress: `Embedding · ${vectors.length} of ${chunks.length} excerpts` });
     }
-    self.postMessage({ index: { chunks, vectors } }, { transfer: vectors.map(v => v.buffer) });
+    self.postMessage({ index: { chunks, vectors } }, { transfer: vectors.map((v) => v.buffer) });
   } catch (error) {
-    postMessage({ error: error instanceof Error && error.message.startsWith('A sentence')
-      ? error.message : 'Could not run the local embedding model. Check the model download and try again.' });
+    postMessage({
+      error:
+        error instanceof Error && error.message.startsWith('A sentence')
+          ? error.message
+          : 'Could not run the local embedding model. Check the model download and try again.',
+    });
   }
 };
