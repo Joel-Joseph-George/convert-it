@@ -5,37 +5,40 @@ import { cn } from '@/lib/utils';
 export interface StatusPillProps {
   status: QueueItemStatus;
   progress?: number;
+  customLabel?: string;
   className?: string;
 }
 
 export const StatusPill: React.FC<StatusPillProps> = ({
   status,
   progress,
+  customLabel,
   className,
 }) => {
   let dotColor = 'bg-muted-foreground';
-  let label = 'Ready';
+  let label = customLabel ?? 'Ready';
 
   switch (status) {
     case 'ready':
       dotColor = 'bg-muted-foreground';
-      label = 'Ready';
+      label = customLabel ?? 'Ready';
       break;
     case 'converting':
       dotColor = 'bg-warning animate-pulse';
-      label = progress !== undefined ? `${progress}%` : 'Converting';
+      label =
+        customLabel ?? (progress !== undefined ? `${progress}%` : 'Converting');
       break;
     case 'done':
       dotColor = 'bg-success';
-      label = 'Done';
+      label = customLabel ?? 'Done';
       break;
     case 'failed':
       dotColor = 'bg-destructive';
-      label = 'Failed';
+      label = customLabel ?? 'Failed';
       break;
     case 'cancelled':
       dotColor = 'bg-muted-foreground';
-      label = 'Cancelled';
+      label = customLabel ?? 'Cancelled';
       break;
   }
 

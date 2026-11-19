@@ -246,4 +246,68 @@
 
 ---
 
-*Ready for Phase 4 review upon user command to continue.*
+## Phase 4: YouTube Module
+
+### 1. What was built
+- **Backend URL Canonicalization & Security (`app/engines/youtube_url.py`):**
+  - Strict host allowlist (`youtube.com`, `www.youtube.com`, `m.youtube.com`, `music.youtube.com`, `youtu.be`).
+  - Automatic `http` to `https` protocol upgrade.
+  - Rejection of URLs with userinfo credentials (`admin:pass@youtube.com`).
+  - Rejection of unsupported endpoints: playlists, channels, user profiles, feeds (`UNSUPPORTED_URL`).
+  - Strict 11-character regex verification (`^[a-zA-Z0-9_-]{11}$`) extracting video IDs from `/watch?v=`, `/shorts/`, `/live/`, and `youtu.be/`.
+  - Rebuilding clean canonical target URL (`https://www.youtube.com/watch?v=<id>`) before dispatching to yt-dlp.
+- **Backend Error Mapping (`app/engines/youtube_errors.py`):**
+  - Pure mapping function converting yt-dlp exceptions into sanitized, user-friendly `AppError` payloads:
+    - Bot verification / Captcha $\rightarrow$ `UPSTREAM_BLOCKED` (502, retryable)
+    - Age-restricted $\rightarrow$ `AGE_RESTRICTED` (422)
+    - Live stream / Premiere $\rightarrow$ `LIVE_NOT_SUPPORTED` (422)
+    - Private / Removed / Copyright / Geo-blocked $\rightarrow$ `VIDEO_UNAVAILABLE` (422)
+    - Duration limit exceeded $\rightarrow$ `VIDEO_TOO_LONG` (422)
+    - File size cap exceeded $\rightarrow$ `FILE_TOO_LARGE` (413)
+    - Network timeout / unreachable $\rightarrow$ `UPSTREAM_ERROR` (502, retryable)
+    - General failures $\rightarrow$ `CONVERSION_FAILED` (500)
+- **Backend YouTube Engine (`app/engines/youtube.py`):**
+  - `extract_video_info`: asynchronous metadata extraction returning sanitized title, channel, duration, formatted duration, upload date, view count, `tooLong` flag vs `YT_MAX_DURATION_MIN`, deduplicated video streams filtered up to `YT_MAX_HEIGHT` with approximate MB sizes, and audio format profiles.
+  - `download_youtube`: executes yt-dlp in a worker thread with progress hooks mapped to stages (downloading 0–85%, finalizing/transcoding 85–100%), FFmpeg audio transcode (`mp3`, `m4a`, `opus`, `wav`) with custom bitrate, container merging (`mp4`, `webm`), optional thumbnail embedding, metadata tag embedding, FFmpeg post-download trimming (`trimStart`, `trimEnd`), hard file size limit enforcement (`YT_MAX_FILESIZE_MB`), and user cancellation polling.
+- **Backend API Endpoints (`app/api/youtube.py`):**
+  - `POST /api/youtube/info`: parses canonical URL and returns summarized video metadata.
+  - `POST /api/jobs/youtube`: validates admission control and canonical URL, enqueues job to `youtube` class, and returns `202 { jobId }`.
+  - Both endpoints are gated behind `ENABLE_YOUTUBE` (returning 503 `TOOL_DISABLED` when disabled).
+- **Frontend Server Client & Hooks (`src/features/server/`):**
+  - `apiClient.ts`: centralized fetch client attaching `X-Access-Code` from settings and converting HTTP errors to typed `AppError`.
+  - `useServerHealth.ts` & `ServerWakeBanner.tsx`: non-blocking server health probe showing calm wake-up banner if server takes $>3\text{s}$ to wake up, retrying every $3\text{s}$ with backoff up to $90\text{s}$, and surfacing offline error.
+  - `useJobEvents.ts`: fetch-based Server-Sent Events (SSE) reader supporting headers and falling back to $1.5\text{s}$ polling if SSE stream fails twice.
+- **Frontend YouTube State & UI (`src/features/youtube/`):**
+  - `youtubeStore.ts`: state machine for YouTube download lifecycle (`idle` $\rightarrow$ `fetching_info` $\rightarrow$ `info_ready` $\rightarrow$ `downloading` $\rightarrow$ `converting` $\rightarrow$ `done` $\rightarrow$ `error`).
+  - `YouTubeSkeleton.tsx`: animated skeleton placeholder during info fetch.
+  - `YouTubeResultCard.tsx`: metadata header (thumbnail with duration pill, title, channel, views), Video/Audio segmented control, quality and format pills, `tooLong` limit alert with audio-only fallback, collapsed "Advanced options" accordion (trim start/end, embed thumbnail, embed metadata), and primary Download button.
+  - `YouTubeProgressCard.tsx`: live progress bar, stage indicator ("Downloading..." / "Transcoding to MP3..."), percentage, and Cancel button.
+  - `YouTubeDoneCard.tsx`: "Complete" status badge, filename, formatted size, primary "Save file" trigger, 15-minute expiration notice, and "Download another" action.
+  - Home page integration (`src/routes/index.tsx`): wires full YouTube workflow and cleanly hides YouTube interface when `limits.youtubeEnabled === false`.
+
+### 2. What was verified
+- **Backend Testing & Quality Gates:**
+  - `ruff check app tests`: **0 errors, 0 warnings**.
+  - `ruff format --check app tests`: **All 30 source files formatted**.
+  - `mypy app tests`: **Strict typing passed with 0 errors across 30 source files**.
+  - `pytest`: **34 tests passing in 0.59s**:
+    - `test_youtube_url.py`: validated 10 valid URL permutations (youtube.com, youtu.be, shorts, m., music., protocol-less), rejected hostile subdomains, userinfo injection, playlists, channels, and invalid video IDs.
+    - `test_youtube_errors.py`: verified error mapping across bot detection, age restriction, live event, private/removed, timeout, and generic failures.
+    - `test_youtube_api.py`: verified info extraction endpoint, job creation returning 202, and `ENABLE_YOUTUBE=false` feature flag returning 503 `TOOL_DISABLED`.
+    - `test_job_lifecycle.py`: full upload-to-download lifecycle passing with clean temp path isolation.
+- **YouTube Smoke Test:**
+  - `scripts/youtube_smoke_test.py` executed cleanly against live video ("Me at the zoo") extracting title, 19s duration, and 24 stream formats using yt-dlp 2026.10.26.
+- **Frontend Testing & Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings**.
+  - `npm run type-check`: **0 errors** (`tsc --noEmit`).
+  - `npm run test`: **18 test suites, 64 tests passing** in Vitest:
+    - `youtubeStore.test.ts`: verified state initialization, info loading, `tooLong` forcing audio mode, API error handling, and download start.
+    - `youtubeCard.test.tsx`: verified `ServerWakeBanner`, `YouTubeResultCard` mode switching and format rendering, `YouTubeProgressCard` progress bar, and `YouTubeDoneCard` file saving.
+  - `npm run build`: Production bundle built cleanly in 2.27s.
+
+### 3. What could not be verified
+- Downloading DRM-protected or proprietary encrypted media (outside product scope and strictly rejected by yt-dlp).
+
+---
+
+*Ready for Phase 5 review upon user command to continue.*

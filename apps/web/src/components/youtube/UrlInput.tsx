@@ -1,15 +1,20 @@
 import * as React from 'react';
-import { Link as LinkIcon, ArrowRight, X } from 'lucide-react';
+import { Link as LinkIcon, ArrowRight, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/shared/ErrorAlert';
 import { cn } from '@/lib/utils';
 
 export interface UrlInputProps {
   onFetch?: (url: string) => void;
+  isLoading?: boolean;
   className?: string;
 }
 
-export const UrlInput: React.FC<UrlInputProps> = ({ onFetch, className }) => {
+export const UrlInput: React.FC<UrlInputProps> = ({
+  onFetch,
+  isLoading = false,
+  className,
+}) => {
   const [url, setUrl] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
 
@@ -103,10 +108,20 @@ export const UrlInput: React.FC<UrlInputProps> = ({ onFetch, className }) => {
             <Button
               type="submit"
               size="sm"
+              disabled={isLoading}
               className="w-full sm:w-auto text-xs font-medium gap-1"
             >
-              <span>Fetch Media</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Fetching...</span>
+                </>
+              ) : (
+                <>
+                  <span>Fetch Media</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </>
+              )}
             </Button>
           </div>
         </div>

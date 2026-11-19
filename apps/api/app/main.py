@@ -16,11 +16,13 @@ from starlette.responses import Response
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
 from app.api.limits import router as limits_router
+from app.api.youtube import router as youtube_router
 from app.core.config import settings
 from app.core.errors import AppError, app_error_handler
 from app.core.logging import logger, setup_logging
 from app.core.security import get_client_ip
 from app.engines.echo import echo_engine
+from app.engines.youtube import download_youtube
 from app.jobs.cleanup import run_cleanup_loop, wipe_temp_directory
 from app.jobs.queue import JobQueue, MemoryJobQueue, RedisJobQueue
 from app.jobs.runner import JobRunner
@@ -60,6 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Register echo engines for testing and verification
     runner.register_engine("echo-convert", echo_engine)
     runner.register_engine("test-convert", echo_engine)
+    runner.register_engine("youtube-download", download_youtube)
     await runner.start()
 
     # 5. Background Cleanup Task
@@ -191,3 +194,4 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(health_router, prefix="/api")
 app.include_router(limits_router, prefix="/api")
 app.include_router(jobs_router, prefix="/api")
+app.include_router(youtube_router, prefix="/api")

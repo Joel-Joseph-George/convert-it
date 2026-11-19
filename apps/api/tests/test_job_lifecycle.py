@@ -4,6 +4,7 @@ import asyncio
 import io
 import time
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 import fakeredis.aioredis as fake_redis
 import pytest
@@ -19,8 +20,11 @@ from app.main import app
 
 
 @pytest.fixture
-async def memory_app() -> AsyncGenerator[FastAPI, None]:
+async def memory_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncGenerator[FastAPI, None]:
     """Configure app with Memory backend and running JobRunner."""
+    monkeypatch.setattr(settings, "TMP_DIR", str(tmp_path))
     store = MemoryJobStore()
     queue = MemoryJobQueue()
     runner = JobRunner(store, queue)
@@ -35,14 +39,17 @@ async def memory_app() -> AsyncGenerator[FastAPI, None]:
 
     yield app
 
-    await runner.stop(grace_period_sec=5.0)
+    await runner.stop(grace_period_sec=2.0)
     await queue.close()
     await store.close()
 
 
 @pytest.fixture
-async def redis_app() -> AsyncGenerator[FastAPI, None]:
+async def redis_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> AsyncGenerator[FastAPI, None]:
     """Configure app with FakeRedis backend and running JobRunner."""
+    monkeypatch.setattr(settings, "TMP_DIR", str(tmp_path))
     redis_client = fake_redis.FakeRedis()
     store = RedisJobStore(redis_client=redis_client)
     queue = RedisJobQueue(redis_client=redis_client)
@@ -58,7 +65,7 @@ async def redis_app() -> AsyncGenerator[FastAPI, None]:
 
     yield app
 
-    await runner.stop(grace_period_sec=5.0)
+    await runner.stop(grace_period_sec=2.0)
     await queue.close()
     await store.close()
 

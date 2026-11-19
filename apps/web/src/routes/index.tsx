@@ -3,6 +3,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ShieldCheck, Upload } from 'lucide-react';
 import { UrlInput } from '@/components/youtube/UrlInput';
 import { PopularToolsStrip } from '@/components/tool/PopularToolsStrip';
+import { useServerHealth } from '@/features/server/useServerHealth';
+import { ServerWakeBanner } from '@/features/server/ServerWakeBanner';
+import { ErrorAlert } from '@/components/shared/ErrorAlert';
+import { useYouTubeStore } from '@/features/youtube/youtubeStore';
+import { YouTubeSkeleton } from '@/features/youtube/YouTubeSkeleton';
+import { YouTubeResultCard } from '@/features/youtube/YouTubeResultCard';
+import { YouTubeProgressCard } from '@/features/youtube/YouTubeProgressCard';
+import { YouTubeDoneCard } from '@/features/youtube/YouTubeDoneCard';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -10,6 +18,10 @@ export const Route = createFileRoute('/')({
 
 function HomePage(): React.ReactElement {
   const navigate = useNavigate();
+  const { isWakingUp, serverError, limits } = useServerHealth();
+  const { status, error, fetchInfo, reset } = useYouTubeStore();
+
+  const youtubeEnabled = limits ? limits.youtubeEnabled : true;
 
   const handleQuickDrop = (e: React.DragEvent): void => {
     e.preventDefault();
@@ -18,6 +30,20 @@ function HomePage(): React.ReactElement {
 
   return (
     <div className="mx-auto max-w-content space-y-10">
+      {/* Wake-up banner when server takes > 3s to respond */}
+      {isWakingUp && <ServerWakeBanner />}
+
+      {/* Offline error if server does not respond within 90s */}
+      {serverError && (
+        <ErrorAlert
+          error={{
+            code: 'SERVER_OFFLINE',
+            message: 'The server is not responding. Please check your connection or try again later.',
+            retryable: true,
+          }}
+        />
+      )}
+
       {/* Hero Section */}
       <div className="space-y-4 text-center">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
@@ -33,12 +59,35 @@ function HomePage(): React.ReactElement {
         </h1>
 
         <p className="text-base text-muted-foreground max-w-md mx-auto">
-          Download YouTube videos or audio, or convert any file right in your browser.
+          {youtubeEnabled
+            ? 'Download YouTube videos or audio, or convert any file right in your browser.'
+            : 'Convert any file between audio, video, image, PDF, and data formats directly in your browser.'}
         </p>
       </div>
 
-      {/* YouTube Link Ingestion Bar with validation alert */}
-      <UrlInput />
+      {/* YouTube Flow or Disabled Notice */}
+      {youtubeEnabled ? (
+        <div className="space-y-6">
+          <UrlInput
+            isLoading={status === 'fetching_info'}
+            onFetch={(url) => fetchInfo(url)}
+          />
+
+          {status === 'fetching_info' && <YouTubeSkeleton />}
+          {status === 'info_ready' && <YouTubeResultCard />}
+          {(status === 'downloading' ||
+            status === 'converting' ||
+            status === 'queued') && <YouTubeProgressCard />}
+          {status === 'done' && <YouTubeDoneCard />}
+          {status === 'error' && error && (
+            <ErrorAlert error={error} onAction={reset} />
+          )}
+        </div>
+      ) : (
+        <div className="p-4 rounded-card border border-border bg-card text-center text-xs text-muted-foreground">
+          YouTube media downloading is currently disabled on this instance.
+        </div>
+      )}
 
       {/* Quick Dropzone */}
       <div
