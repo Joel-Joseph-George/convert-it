@@ -1,0 +1,21 @@
+{
+  "name": "convert-it",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace=apps/web run dev",
+    "build": "npm --workspace=apps/web run build",
+    "lint": "npm --workspace=apps/web run lint",
+    "type-check": "npm --workspace=apps/web run type-check",
+    "test": "npm --workspace=apps/web run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "prettier-plugin-tailwindcss": "^0.6.11"
+  }
+}

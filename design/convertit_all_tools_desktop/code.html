@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><title>ConvertIt</title><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "inverse-primary": "#c3c0ff", "error": "#ba1a1a", "on-tertiary": "#ffffff", "on-tertiary-container": "#ffd2be", "on-tertiary-fixed": "#351000", "on-tertiary-fixed-variant": "#7b2f00", "surface-tint": "#4d44e3", "on-secondary-fixed-variant": "#4b4641", "on-surface": "#1e1b19", "surface-container-lowest": "#ffffff", "tertiary": "#7e3000", "on-surface-variant": "#464555", "surface-variant": "#e9e1dd", "on-secondary-fixed": "#1f1b17", "surface-container-highest": "#e9e1dd", "tertiary-fixed-dim": "#ffb695", "surface-container-low": "#faf2ee", "surface-dim": "#e0d8d5", "tertiary-container": "#a44100", "on-primary-fixed-variant": "#3323cc", "on-secondary": "#ffffff", "surface-bright": "#fff8f5", "secondary-fixed-dim": "#cec5bf", "primary-fixed": "#e2dfff", "on-secondary-container": "#6a635e", "surface-container": "#f4ece8", "tertiary-fixed": "#ffdbcc", "on-error": "#ffffff", "secondary-container": "#eae1da", "primary": "#3525cd", "background": "#fff8f5", "outline": "#777587", "secondary": "#645d58", "primary-fixed-dim": "#c3c0ff", "surface-container-high": "#eee7e3", "on-background": "#1e1b19", "surface": "#fff8f5", "on-error-container": "#93000a", "secondary-fixed": "#eae1da", "primary-container": "#4f46e5", "on-primary-container": "#dad7ff", "outline-variant": "#c7c4d8", "inverse-surface": "#33302d", "on-primary": "#ffffff", "error-container": "#ffdad6", "inverse-on-surface": "#f7efeb", "on-primary-fixed": "#0f0069" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "space-lg": "1.5rem", "gutter": "1rem", "space-xs": "0.25rem", "margin-mobile": "1rem", "space-sm": "0.5rem", "margin": "1.5rem", "space-xl": "2rem" }, "fontFamily": { "headline-lg": ["Inter"], "caption": ["Inter"], "body-lg": ["Inter"], "headline-lg-mobile": ["Inter"], "headline-md": ["Inter"], "label-sm": ["Inter"], "body-sm": ["Inter"], "label-md": ["Inter"] }, "fontSize": { "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "body-sm": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }] } } } };</script></head><body class="bg-background font-body-sm text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 max-w-[960px] mx-auto px-margin-mobile md:px-margin flex items-center justify-between"><div class="flex items-center gap-space-lg"><a class="font-headline-md text-headline-md tracking-tight text-on-surface" data-path="converter" href="#">Convert<span class="text-primary-container">It</span></a><nav class="hidden sm:flex items-center gap-space-sm" data-active-classes="bg-surface-container-high text-on-surface font-label-md text-label-md px-space-sm py-space-xs rounded-lg"><a aria-current="page" class="transition-colors bg-surface-container-high text-on-surface font-label-md text-label-md px-space-sm py-space-xs rounded-lg" data-path="all-tools" href="#">All tools</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface px-space-sm py-space-xs rounded-lg transition-colors" data-path="converter" href="#">Convert</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface px-space-sm py-space-xs rounded-lg transition-colors" data-path="batch-queue" href="#">Queue</a></nav></div><div class="flex items-center gap-space-xs"><button aria-label="Search tools" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">search</span></button><button aria-label="Toggle theme" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">light_mode</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center ml-space-xs"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<div class="w-full max-w-[960px] mx-auto px-margin-mobile md:px-margin py-space-xl flex flex-col gap-space-xl">
+<!-- Header Section -->
+<header class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-space-sm py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-caption text-caption">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+          24 tools available • Client-first architecture
+        </span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-space-sm">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">All tools</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-1">Search or browse. Everything is free and ad-free.</p>
+</div>
+<div class="hidden md:flex items-center gap-space-xs text-caption font-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">verified_user</span>
+<span>Zero telemetries, entirely local when marked</span>
+</div>
+</div>
+</header>
+<!-- Interactive Search Bar -->
+<div class="relative w-full">
+<div class="h-12 w-full bg-surface-container-lowest rounded-xl flex items-center px-space-md shadow-sm transition-all duration-150 focus-within:ring-2 focus-within:ring-primary-container">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant shrink-0 mr-space-sm select-none">search</span>
+<input autocomplete="off" class="w-full bg-transparent text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm outline-none border-none py-1" id="tools-search-input" placeholder="Search tools, e.g. PDF to Word, MP3, compress" type="text"/>
+<div class="flex items-center gap-1 shrink-0 ml-space-sm">
+<button class="hidden text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors" id="clear-search-btn" title="Clear search">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+<kbd class="hidden sm:inline-flex items-center justify-center h-6 px-1.5 rounded bg-surface-container text-on-surface-variant font-caption text-caption font-medium select-none shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">⌘K</kbd>
+</div>
+</div>
+</div>
+<!-- Filter Chips Horizontal Scroller -->
+<div class="w-full overflow-x-auto no-scrollbar -mt-space-sm">
+<div class="flex items-center gap-space-xs min-w-max py-0.5" id="category-filters">
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-primary-container text-on-primary" data-category="all">All</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="pdf">PDF</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="image">Image</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="audio">Audio</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="video">Video</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="documents">Documents</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="data">Data</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="archives">Archives</button>
+<button class="category-chip px-space-md h-8 rounded-lg font-label-md text-label-md transition-all duration-150 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container" data-category="text">Text</button>
+</div>
+</div>
+<!-- Active Search Filter Summary Row -->
+<div class="flex items-center justify-between text-caption font-caption text-on-surface-variant px-1 -mt-space-sm" id="results-count-bar">
+<span>Showing <strong class="text-on-surface font-medium" id="visible-count">12</strong> tools</span>
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span> Client WASM accelerated</span>
+</div>
+<!-- 3-Column Tools Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md" id="tools-grid">
+<!-- Card 1: Merge PDF -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="pdf documents" data-keywords="pdf merge combine document join" data-title="Merge PDF">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">call_merge</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Merge PDF</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Combine multiple PDF documents into one ordered file.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">PDF → PDF</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">WASM Core</span>
+</div>
+</article>
+<!-- Card 2: PDF to Word -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="pdf documents" data-keywords="pdf word docx convert editable ocr" data-title="PDF to Word">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+              Server
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">PDF to Word</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Convert PDF files into editable DOCX documents.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">PDF → DOCX</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">High Fidelity</span>
+</div>
+</article>
+<!-- Card 3: Compress image -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="image" data-keywords="image compress shrink png jpg webp optimize size" data-title="Compress image">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">photo_size_select_small</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Compress image</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Shrink PNG, JPG, and WEBP file sizes without visible quality loss.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">PNG • JPG • WEBP</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">MozJPEG / Oxipng</span>
+</div>
+</article>
+<!-- Card 4: HEIC to JPG -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="image" data-keywords="heic jpg jpeg apple photo iphone convert" data-title="HEIC to JPG">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">HEIC to JPG</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Convert Apple HEIC photos into universally compatible JPGs.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">HEIC → JPG</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">Client Libheif</span>
+</div>
+</article>
+<!-- Card 5: MP3 to WAV -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="audio" data-keywords="mp3 wav audio decode lossless pcm sound" data-title="MP3 to WAV">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">graphic_eq</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">MP3 to WAV</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Lossless decode and convert MP3 audio to uncompressed WAV PCM.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">MP3 → WAV</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">Web Audio API</span>
+</div>
+</article>
+<!-- Card 6: Excel to CSV -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="data documents" data-keywords="excel csv xlsx sheets spreadsheet table" data-title="Excel to CSV">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">table_chart</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Excel to CSV</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Export Excel sheets and workbooks to clean delimiter-separated text.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">XLSX → CSV</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">Multi-Sheet</span>
+</div>
+</article>
+<!-- Card 7: Video to GIF -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="video image" data-keywords="video gif mp4 movie animation clip trim" data-title="Video to GIF">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">gif_box</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Video to GIF</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Trim and convert short video clips into lightweight animated GIFs.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">MP4 • WEBM → GIF</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">FFmpeg WASM</span>
+</div>
+</article>
+<!-- Card 8: ZIP extractor -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="archives" data-keywords="zip tar gz archive decompress unpack unzip" data-title="ZIP extractor">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">folder_zip</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">ZIP extractor</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Decompress and unpack ZIP and TAR archives right in your browser.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">ZIP • TAR • GZ</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">Zero Uploads</span>
+</div>
+</article>
+<!-- Card 9: Markdown to HTML -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="text documents" data-keywords="markdown md html render parse markup document" data-title="Markdown to HTML">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">code_blocks</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Markdown to HTML</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Parse formatted markdown documents into semantic HTML markup.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">MD → HTML</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">GFM Compliant</span>
+</div>
+</article>
+<!-- Card 10: YouTube Downloader -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="video audio" data-keywords="youtube video download extract mp3 audio stream" data-title="YouTube Downloader">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">cloud_download</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+              Server
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">YouTube Downloader</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Fetch video streams or extract audio track at high quality.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">MP4 • WEBM • MP3</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">YT-DLP Upstream</span>
+</div>
+</article>
+<!-- Card 11: Audio Transcoder -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="audio" data-keywords="audio transcode flac aac ogg mp3 sound bitrate codec" data-title="Audio Transcoder">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">Audio Transcoder</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Convert between MP3, FLAC, AAC, and OGG formats locally.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">FLAC • AAC • OGG • MP3</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">FFmpeg WASM</span>
+</div>
+</article>
+<!-- Card 12: SVG Optimizer -->
+<article class="tool-card group bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" data-category="image text" data-keywords="svg optimize vector minify clean strip web" data-title="SVG Optimizer">
+<div class="flex flex-col gap-space-md">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">polyline</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-low font-caption text-caption text-on-surface-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+              In your browser
+            </span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary-container transition-colors">SVG Optimizer</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 line-clamp-2">Strip metadata and minify vector SVG markup for web production.</p>
+</div>
+</div>
+<div class="pt-space-md flex items-center gap-1.5 flex-wrap">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">SVG → Clean SVG</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-on-surface-variant font-caption text-caption">SVGO In-Engine</span>
+</div>
+</article>
+</div>
+<!-- Empty Search State Card (Shown dynamically on 0 matches) -->
+<div class="hidden w-full bg-surface-container-lowest rounded-xl p-space-xl text-center shadow-sm flex flex-col items-center justify-center py-16" id="empty-state-view">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-md">
+<span class="material-symbols-outlined text-[24px]">search_off</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface">No tool found</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-sm mt-1">This is a personal project, new tools get added over time. Let us know what you need converted.</p>
+<div class="mt-space-lg flex items-center gap-space-sm">
+<button class="h-10 px-space-md rounded-lg font-label-md text-label-md bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors" onclick="document.getElementById('tools-search-input').value = ''; document.getElementById('tools-search-input').dispatchEvent(new Event('input'));" type="button">
+          Clear query
+        </button>
+<a class="h-10 px-space-md rounded-lg font-label-md text-label-md bg-primary-container text-on-primary hover:bg-primary transition-colors flex items-center gap-space-xs" href="mailto:support@convertit.local?subject=Tool%20Request">
+<span>Request a tool or submit feedback</span>
+<span class="material-symbols-outlined text-[16px]">arrow_outward</span>
+</a>
+</div>
+</div>
+<!-- Quick Tool Info Footnote Banner -->
+<div class="w-full bg-surface-container-low rounded-xl p-space-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-9 h-9 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[20px]">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Privacy First Guarantee</span>
+<span class="font-caption text-caption text-on-surface-variant">Tools labeled “In your browser” execute locally via WebAssembly. Your files never touch a server.</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+<span class="font-caption text-caption text-on-surface-variant">ConvertIt v2.4.0</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initToolsDirectory() {
+    const searchInput = document.getElementById('tools-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const chips = document.querySelectorAll('.category-chip');
+    const cards = document.querySelectorAll('.tool-card');
+    const emptyState = document.getElementById('empty-state-view');
+    const visibleCountEl = document.getElementById('visible-count');
+    const resultsBar = document.getElementById('results-count-bar');
+
+    let currentCategory = 'all';
+    let searchQuery = '';
+
+    function filterTools() {
+      let visibleCount = 0;
+      const q = searchQuery.toLowerCase().trim();
+
+      cards.forEach(card => {
+        const categories = (card.dataset.category || '').toLowerCase();
+        const title = (card.dataset.title || '').toLowerCase();
+        const keywords = (card.dataset.keywords || '').toLowerCase();
+
+        const matchesCategory = (currentCategory === 'all') || categories.includes(currentCategory);
+        const matchesSearch = !q || title.includes(q) || keywords.includes(q);
+
+        if (matchesCategory && matchesSearch) {
+          card.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+
+      visibleCountEl.textContent = visibleCount;
+
+      if (visibleCount === 0) {
+        emptyState.classList.remove('hidden');
+        resultsBar.classList.add('opacity-40');
+      } else {
+        emptyState.classList.add('hidden');
+        resultsBar.classList.remove('opacity-40');
+      }
+
+      if (q.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+    }
+
+    // Search Input Listener
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      filterTools();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      filterTools();
+      searchInput.focus();
+    });
+
+    // Category Filter Chips Listener
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => {
+          c.classList.remove('bg-primary-container', 'text-on-primary');
+          c.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+        });
+        chip.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+        chip.classList.add('bg-primary-container', 'text-on-primary');
+
+        currentCategory = chip.dataset.category;
+        filterTools();
+      });
+    });
+
+    // Global Command + K or / shortcut to focus search
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInput.focus();
+      } else if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+  })();
+</script></main><footer class="w-full bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] py-space-lg"><div class="max-w-[960px] mx-auto px-margin-mobile md:px-margin flex flex-col sm:flex-row items-center justify-between gap-space-md text-caption font-caption text-on-surface-variant"><div class="flex items-center gap-space-md"><span>ConvertIt — Personal utility</span><span class="hidden sm:inline">•</span><span>Ad-free and private</span></div><div class="flex items-center gap-space-lg"><a class="hover:text-on-surface transition-colors" data-path="all-tools" href="#">Tools index</a><a class="flex items-center gap-space-xs hover:text-on-surface transition-colors" href="https://github.com" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[16px]">code</span><span>GitHub</span></a></div></div></footer></body></html>

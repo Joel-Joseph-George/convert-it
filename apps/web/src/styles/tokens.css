@@ -1,0 +1,96 @@
+:root {
+  /* Canvas Background */
+  --background: #fafaf9;
+  --foreground: #1c1917;
+
+  /* Card / Surface */
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+
+  /* Popovers */
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+
+  /* Primary / Accent */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-foreground: #ffffff;
+
+  /* Secondary / Surface Hover / Muted Fill */
+  --secondary: #f5f5f4;
+  --secondary-foreground: #1c1917;
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+
+  /* Accent variant */
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+
+  /* Destructive / Error */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  /* Success & Warning */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+
+  /* Borders & Inputs */
+  --border: #e7e5e4;
+  --border-dashed: #d6d3d1;
+  --input: #e7e5e4;
+  --ring: #4f46e5;
+
+  /* Radii */
+  --radius-card: 12px;
+  --radius-input: 12px;
+  --radius-button: 10px;
+  --radius-chip: 6px;
+  --radius-full: 9999px;
+}
+
+.dark {
+  /* Canvas Background */
+  --background: #0c0a09;
+  --foreground: #fafaf9;
+
+  /* Card / Surface */
+  --card: #171413;
+  --card-foreground: #fafaf9;
+
+  /* Popovers */
+  --popover: #171413;
+  --popover-foreground: #fafaf9;
+
+  /* Primary / Accent */
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --primary-foreground: #0c0a09;
+
+  /* Secondary / Surface Hover / Muted Fill */
+  --secondary: #231f1d;
+  --secondary-foreground: #fafaf9;
+  --muted: #231f1d;
+  --muted-foreground: #a8a29e;
+
+  /* Accent variant */
+  --accent: #818cf8;
+  --accent-foreground: #0c0a09;
+
+  /* Destructive / Error */
+  --destructive: #ef4444;
+  --destructive-foreground: #0c0a09;
+
+  /* Success & Warning */
+  --success: #22c55e;
+  --success-foreground: #0c0a09;
+  --warning: #f59e0b;
+  --warning-foreground: #0c0a09;
+
+  /* Borders & Inputs */
+  --border: #292524;
+  --border-dashed: #44403c;
+  --input: #292524;
+  --ring: #818cf8;
+}

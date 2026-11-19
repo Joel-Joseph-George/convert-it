@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "primary-fixed-dim": "#c3c0ff", "secondary-fixed": "#eae1da", "surface-dim": "#e0d8d5", "secondary-fixed-dim": "#cec5bf", "tertiary": "#7e3000", "tertiary-fixed": "#ffdbcc", "primary": "#3525cd", "secondary-container": "#eae1da", "tertiary-container": "#a44100", "surface-container-highest": "#e9e1dd", "surface": "#fff8f5", "on-primary-fixed-variant": "#3323cc", "secondary": "#645d58", "on-secondary-container": "#6a635e", "on-primary-container": "#dad7ff", "on-surface": "#1e1b19", "tertiary-fixed-dim": "#ffb695", "error-container": "#ffdad6", "on-secondary": "#ffffff", "on-tertiary-fixed": "#351000", "on-secondary-fixed-variant": "#4b4641", "surface-tint": "#4d44e3", "on-tertiary-container": "#ffd2be", "primary-fixed": "#e2dfff", "error": "#ba1a1a", "surface-container-low": "#faf2ee", "on-tertiary-fixed-variant": "#7b2f00", "surface-container": "#f4ece8", "on-error-container": "#93000a", "outline": "#777587", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "inverse-on-surface": "#f7efeb", "on-secondary-fixed": "#1f1b17", "on-surface-variant": "#464555", "surface-bright": "#fff8f5", "outline-variant": "#c7c4d8", "inverse-primary": "#c3c0ff", "background": "#fff8f5", "on-error": "#ffffff", "on-background": "#1e1b19", "surface-container-high": "#eee7e3", "surface-variant": "#e9e1dd", "primary-container": "#4f46e5", "inverse-surface": "#33302d", "on-tertiary": "#ffffff", "on-primary-fixed": "#0f0069" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-lg": "1.5rem", "space-xs": "0.25rem", "space-md": "1rem", "space-sm": "0.5rem", "margin": "1.5rem", "gutter": "1rem", "margin-mobile": "1rem", "space-xl": "2rem" }, "fontFamily": { "headline-lg-mobile": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "caption": ["Inter"], "headline-lg": ["Inter"], "label-md": ["Inter"], "label-sm": ["Inter"], "headline-md": ["Inter"] }, "fontSize": { "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-sm": ["14px", { "lineHeight": "22px", "fontWeight": "400" }], "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }], "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }], "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-sm text-body-sm text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 px-margin-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><a class="font-headline-md text-headline-md tracking-tight text-on-surface select-none" data-path="youtube" href="#">Convert<span class="text-primary-container">It</span></a></div><div class="flex items-center gap-space-xs"><button aria-label="Menu" class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">menu</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full px-margin-mobile pt-14 pb-32 bg-surface"><div class="flex flex-col w-full max-w-[720px] mx-auto space-y-space-md">
+<!-- Page Header & Privacy Assurance -->
+<div class="flex flex-col space-y-space-xs pt-space-xs">
+<div class="flex items-center justify-between">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Audio converter</h1>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+        WASM Core
+      </span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span>Convert MP3, WAV, AAC, FLAC, and OGG. Everything runs locally in your browser.</span>
+</div>
+</div>
+<!-- Mobile Drop / File Target -->
+<div class="relative w-full rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center justify-center text-center shadow-sm">
+<input accept="audio/*" aria-label="Select audio files" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" id="fileInput" multiple="" type="file"/>
+<div class="w-11 h-11 rounded-full bg-primary-fixed flex items-center justify-center mb-space-xs text-primary">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<button class="w-full max-w-[200px] h-11 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm pointer-events-none mb-space-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Choose files</span>
+</button>
+<p class="font-caption text-caption text-on-surface-variant">Up to 500 MB per file • Lossless &amp; private</p>
+</div>
+<!-- Format Target Selector -->
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Convert to</span>
+<span class="font-caption text-caption text-primary font-medium" id="selectedFormatDisplay">Target: MP3 (320 kbps)</span>
+</div>
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 -mx-margin-mobile px-margin-mobile" id="formatRow">
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-primary-container text-on-primary font-label-sm text-label-sm shadow-sm transition-colors" data-format="MP3" type="button">MP3</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="WAV" type="button">WAV</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="AAC" type="button">AAC</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="FLAC" type="button">FLAC</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="OGG" type="button">OGG</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="M4A" type="button">M4A</button>
+<button class="format-pill shrink-0 px-3.5 h-8 rounded-lg bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors hover:bg-surface-container-high" data-format="AIFF" type="button">AIFF</button>
+</div>
+</div>
+<!-- Collapsible Encoding Options Accordion -->
+<div class="rounded-xl bg-surface-container-lowest overflow-hidden shadow-sm">
+<button aria-expanded="false" class="w-full h-12 px-space-md flex items-center justify-between text-left text-on-surface hover:bg-surface-container-low transition-colors" id="optionsToggle" type="button">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">tune</span>
+<span>Encoding options</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-caption text-caption text-on-surface-variant" id="optionsSummary">320kbps · 44.1kHz</span>
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant transition-transform duration-200" id="accordionChevron">expand_more</span>
+</div>
+</button>
+<div class="hidden px-space-md pb-space-md pt-space-xs space-y-space-sm bg-surface-container-low" id="optionsPanel">
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="bitrateSelect">Bitrate</label>
+<div class="relative">
+<select class="w-full h-9 px-2.5 pr-7 rounded-md bg-surface-container-lowest text-on-surface font-body-sm text-body-sm appearance-none outline-none focus:ring-2 focus:ring-primary-container" id="bitrateSelect">
+<option value="320">320 kbps (CBR)</option>
+<option value="256">256 kbps (VBR)</option>
+<option value="192">192 kbps (Standard)</option>
+<option value="128">128 kbps (Voice)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 text-[16px] pointer-events-none text-on-surface-variant">unfold_more</span>
+</div>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant" for="sampleRateSelect">Sample Rate</label>
+<div class="relative">
+<select class="w-full h-9 px-2.5 pr-7 rounded-md bg-surface-container-lowest text-on-surface font-body-sm text-body-sm appearance-none outline-none focus:ring-2 focus:ring-primary-container" id="sampleRateSelect">
+<option value="48000">48,000 Hz (Pro)</option>
+<option selected="" value="44100">44,100 Hz (CD)</option>
+<option value="22050">22,050 Hz</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 text-[16px] pointer-events-none text-on-surface-variant">unfold_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-caption text-caption text-on-surface-variant">Channels: Stereo (2ch)</span>
+<label class="inline-flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="rounded bg-surface-container text-primary-container accent-primary" type="checkbox"/>
+<span class="font-caption text-caption text-on-surface">Normalize audio</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Queue Stack Header -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface">Active Queue</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-caption text-caption">3 files</span>
+</div>
+<button class="font-caption text-caption text-on-surface-variant hover:text-error transition-colors" onclick="this.closest('.flex-col').querySelectorAll('.file-card').forEach(c =&gt; c.remove())" type="button">Clear all</button>
+</div>
+<!-- File List as Stacked Cards -->
+<div class="flex flex-col space-y-space-sm" id="queueList">
+<!-- Card 1: Ready State -->
+<div class="file-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col space-y-space-xs transition-all hover:bg-surface-container-low/60">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[20px]">music_note</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md text-on-surface truncate">podcast_interview_raw.wav</p>
+<div class="flex items-center gap-2 font-caption text-caption text-on-surface-variant">
+<span>142.8 MB</span>
+<span>•</span>
+<span class="font-medium text-on-surface">WAV → MP3</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-caption text-caption">Ready</span>
+<button aria-label="Remove podcast_interview_raw.wav" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface" onclick="this.closest('.file-card').remove()" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Card 2: Converting State -->
+<div class="file-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col space-y-space-xs transition-all">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px] animate-spin">sync</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md text-on-surface truncate">acoustic_session_take_02.flac</p>
+<div class="flex items-center gap-2 font-caption text-caption text-on-surface-variant">
+<span>84.2 MB</span>
+<span>•</span>
+<span class="text-primary font-medium">Converting 63% · 1.4s left</span>
+</div>
+</div>
+<button aria-label="Cancel conversion" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface" onclick="this.closest('.file-card').remove()" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Track & Progress Bar -->
+<div class="w-full h-1.5 rounded-full bg-surface-container overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full transition-all duration-300" style="width: 63%;"></div>
+</div>
+</div>
+<!-- Card 3: Done State with Prominent Download -->
+<div class="file-card w-full rounded-xl bg-surface-container-lowest p-space-md shadow-sm flex flex-col space-y-space-sm transition-all">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-1.5">
+<p class="font-label-md text-label-md text-on-surface truncate">synth_melody.aiff</p>
+<span class="inline-flex items-center px-1.5 py-0.2 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800">Done</span>
+</div>
+<div class="flex items-center gap-1.5 font-caption text-caption text-on-surface-variant">
+<span>18.4 MB → 4.1 MB MP3</span>
+<span class="text-emerald-700 font-medium">(-77%)</span>
+</div>
+</div>
+<button aria-label="Remove synth_melody.aiff" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface" onclick="this.closest('.file-card').remove()" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<div class="flex items-center gap-2 pt-1">
+<a class="flex-1 h-11 rounded-lg bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 transition-colors" download="synth_melody.mp3" href="#download">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download MP3</span>
+</a>
+<button aria-label="Preview synth_melody" class="w-11 h-11 rounded-lg bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface transition-colors" title="Play preview" type="button">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Primary Sticky Bottom Action Area -->
+<div class="pt-space-xs space-y-space-xs">
+<button class="w-full h-12 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-md transition-all active:scale-[0.99]" id="startBatchBtn" type="button">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+<span>Convert remaining files</span>
+</button>
+<!-- WebAssembly Telemetry & Stats -->
+<div class="flex items-center justify-center gap-2 px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface-variant font-caption text-caption">
+<span class="material-symbols-outlined text-[14px] text-primary">memory</span>
+<span>Engine: ffmpeg.wasm 0.12.7 • Multi-thread SIMD Active • 0 B uploaded</span>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // Format selector pills
+    const pills = document.querySelectorAll('.format-pill');
+    const display = document.getElementById('selectedFormatDisplay');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => {
+          p.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-sm');
+          p.classList.add('bg-surface-container', 'text-on-surface');
+        });
+        pill.classList.remove('bg-surface-container', 'text-on-surface');
+        pill.classList.add('bg-primary-container', 'text-on-primary', 'shadow-sm');
+        const fmt = pill.dataset.format;
+        if (display) {
+          display.textContent = `Target: ${fmt} (320 kbps)`;
+        }
+      });
+    });
+
+    // Accordion logic
+    const toggle = document.getElementById('optionsToggle');
+    const panel = document.getElementById('optionsPanel');
+    const chevron = document.getElementById('accordionChevron');
+    if (toggle && panel && chevron) {
+      toggle.addEventListener('click', () => {
+        const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', !isExpanded);
+        panel.classList.toggle('hidden');
+        chevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
+      });
+    }
+
+    // Interactive simulate conversion
+    const batchBtn = document.getElementById('startBatchBtn');
+    if (batchBtn) {
+      batchBtn.addEventListener('click', function() {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="material-symbols-outlined text-[20px] animate-spin">refresh</span><span>Processing files locally...</span>';
+        this.classList.add('opacity-90');
+        setTimeout(() => {
+          this.innerHTML = '<span class="material-symbols-outlined text-[20px]">done_all</span><span>All files converted!</span>';
+          setTimeout(() => {
+            this.innerHTML = originalText;
+            this.classList.remove('opacity-90');
+          }, 2400);
+        }, 1800);
+      });
+    }
+  })();
+</script><footer class="mt-space-xl pb-space-lg flex flex-col items-center justify-center text-center gap-space-xs"><p class="font-caption text-caption text-on-surface-variant">Made for personal use • Files processed in your browser</p><div class="flex items-center gap-space-md font-caption text-caption text-on-surface-variant"><a class="hover:text-on-surface transition-colors" data-path="privacy-notice" href="#">Privacy</a><span>•</span><a class="hover:text-on-surface transition-colors" data-path="supported-codecs" href="#">Codecs</a><span>•</span><a class="hover:text-on-surface transition-colors" data-path="settings" href="#">Settings</a></div></footer></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-primary-container font-label-sm"><div class="flex items-center justify-between px-space-xs h-16 overflow-x-auto"><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 text-on-surface-variant font-caption text-caption transition-colors" data-path="youtube" href="#"><span class="material-symbols-outlined text-[20px]">smart_display</span><span>YouTube</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 transition-colors text-primary-container font-label-sm" data-path="audio-converter" href="#"><span class="material-symbols-outlined text-[20px]">graphic_eq</span><span>Audio</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 text-on-surface-variant font-caption text-caption transition-colors" data-path="video-converter" href="#"><span class="material-symbols-outlined text-[20px]">movie</span><span>Video</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 text-on-surface-variant font-caption text-caption transition-colors" data-path="image-converter" href="#"><span class="material-symbols-outlined text-[20px]">image</span><span>Image</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 text-on-surface-variant font-caption text-caption transition-colors" data-path="document-converter" href="#"><span class="material-symbols-outlined text-[20px]">description</span><span>Docs</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[56px] h-11 text-on-surface-variant font-caption text-caption transition-colors" data-path="data-transformer" href="#"><span class="material-symbols-outlined text-[20px]">table_chart</span><span>Data</span></a></div></nav></body></html>
