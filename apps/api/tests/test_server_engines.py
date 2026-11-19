@@ -5,7 +5,7 @@ import os
 import shutil
 from collections.abc import AsyncGenerator
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import openpyxl
@@ -264,12 +264,13 @@ async def test_libreoffice_timeout_handling(tmp_path: Any) -> None:
     mock_proc = AsyncMock()
     mock_proc.returncode = None
     mock_proc.communicate.side_effect = TimeoutError()
+    mock_proc.terminate = Mock()
 
     with (
         patch("app.engines.libreoffice.find_libreoffice_binary", return_value="/usr/bin/soffice"),
         patch("asyncio.create_subprocess_exec", return_value=mock_proc),
-        patch("os.killpg", return_value=None),
-        patch("os.getpgid", return_value=12345),
+        patch("os.killpg", return_value=None, create=True),
+        patch("os.getpgid", return_value=12345, create=True),
     ):
         with pytest.raises(AppError) as exc_info:
             await convert_with_libreoffice(job, AsyncMock())

@@ -19,7 +19,7 @@ dependencies = [
     "pdf2docx>=0.5.8",
     "pdfplumber>=0.11.0",
     "openpyxl>=3.1.0",
-    "openai>=1.60.0",
+    "openai>=2,<3",
 ]
 
 [project.optional-dependencies]
@@ -69,7 +69,7 @@ check_untyped_defs = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["filetype.*", "yt_dlp.*", "pdf2docx.*", "pdfplumber.*", "openpyxl.*", "openai.*"]
+module = ["filetype.*", "yt_dlp.*", "pdf2docx.*", "pdfplumber.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
