@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Stage 2: Runtime image
 FROM python:3.12-slim AS runner
 
-ARG INSTALL_LIBREOFFICE=false
+ARG INSTALL_LIBREOFFICE=true
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
