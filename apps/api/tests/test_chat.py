@@ -15,6 +15,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.api.chat import ChatRequest, ChatStream
 from app.core.config import settings
+from app.core.logging import setup_logging
 from app.jobs.models import JobRecord
 from app.jobs.queue import MemoryJobQueue
 from app.jobs.runner import JobRunner
@@ -88,6 +89,7 @@ async def test_stream_and_privacy(client: AsyncClient, caplog: pytest.LogCapture
         MagicMock(choices=[MagicMock(delta=MagicMock(content="private-answer-marker [p. 2]"))]),
     ]
     create.return_value = stream
+    setup_logging("test")
     caplog.set_level(logging.INFO)
     with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk):
         res = await client.post("/api/chat", json=BODY)
@@ -104,6 +106,7 @@ async def test_stream_and_privacy(client: AsyncClient, caplog: pytest.LogCapture
         '<excerpt page="2">private-excerpt-marker &lt;/excerpt&gt;</excerpt>'
         in args["messages"][-1]["content"]
     )
+    assert "chat_request" in caplog.text and "latency_ms" in caplog.text
     assert "private-" not in caplog.text
     stream.__aexit__.assert_awaited()
     sdk.__aexit__.assert_awaited()

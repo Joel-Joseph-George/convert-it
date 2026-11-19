@@ -53,9 +53,13 @@ describe('PDF excerpts', () => {
     };
     expect(retrieve(index, Float32Array.of(1, 0)).map((c) => c.page)).toEqual([8, 7, 6, 5, 4]);
     expect(retrieve(index, Float32Array.of(0, -1))).toEqual([]);
-    expect(retrievalQuery('And when?', 'Who opened the library?')).toContain(
+    const encode = (text: string) => Array.from(text, (char) => char.charCodeAt(0));
+    const decode = (ids: number[]) => String.fromCharCode(...ids);
+    expect(retrievalQuery('And when?', 'Who opened the library?', encode, decode)).toContain(
       'Who opened the library?',
     );
+    const longQuery = retrievalQuery('a'.repeat(300), 'b'.repeat(300), encode, decode);
+    expect(longQuery).toEqual('a'.repeat(190) + 'b'.repeat(64));
     expect(
       chatPayload('Q', [index.chunks[0] ?? { page: 1, text: '' }], []).chunks[0],
     ).not.toHaveProperty('id');

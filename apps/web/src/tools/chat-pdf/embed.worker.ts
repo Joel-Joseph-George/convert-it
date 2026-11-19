@@ -1,11 +1,12 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers';
-import { chunkPages, MAX_TOKENS, type Chunk, type PageText } from './chunker';
+import { chunkPages, type Chunk, type PageText } from './chunker';
+import { retrievalQuery } from './retrieve';
 
 export interface Index {
   chunks: Chunk[];
   vectors: Float32Array[];
 }
-export type Work = { pages: PageText[] } | { query: string };
+export type Work = { pages: PageText[] } | { query: string; previous?: string };
 export type Reply =
   { progress: string } | { index: Index } | { vector: Float32Array } | { error: string };
 
@@ -76,11 +77,12 @@ self.onmessage = async ({ data }: MessageEvent<Work>) => {
   try {
     const model = await loadEngine();
     if ('query' in data) {
-      const ids = model.tokenizer.encode(data.query, { add_special_tokens: false });
-      const query =
-        ids.length <= MAX_TOKENS - 2
-          ? data.query
-          : model.tokenizer.decode(ids.slice(0, MAX_TOKENS - 2));
+      const query = retrievalQuery(
+        data.query,
+        data.previous,
+        (text) => model.tokenizer.encode(text, { add_special_tokens: false }),
+        (ids) => model.tokenizer.decode(ids),
+      );
       const [vector] = await embed([query]);
       postMessage({ vector });
       return;

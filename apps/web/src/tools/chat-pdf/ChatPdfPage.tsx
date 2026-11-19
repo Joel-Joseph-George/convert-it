@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ask } from './api';
 import { extractPages, openPdf } from './extract';
 import { chatPayload, citationParts } from './prompt';
-import { retrieve, retrievalQuery } from './retrieve';
+import { retrieve } from './retrieve';
 import { clearIndexes, emptyState, fingerprint, readIndex, saveIndex, useChat } from './store';
 import { DocumentSession } from './session';
 import { PagePreview } from './PagePreview';
@@ -107,7 +107,7 @@ export default function ChatPdfPage() {
     useChat.setState({ messages: next, status: 'asking', progress: 'Finding relevant excerpts…' });
     try {
       const query = await current.run(
-        { query: retrievalQuery(text, previous?.content) },
+        { query: text, previous: previous?.content },
         control.signal,
         progress,
       );
