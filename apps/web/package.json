@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "copy-vendor": "mkdir -p public/vendor/ffmpeg public/vendor/pdfjs && cp ../../node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.* public/vendor/ffmpeg/ && cp ../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/vendor/pdfjs/",
+    "postinstall": "npm run copy-vendor",
+    "prebuild": "npm run copy-vendor",
+    "predev": "npm run copy-vendor",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint . --max-warnings 0",
@@ -11,6 +15,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@fontsource/inter": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
     "@radix-ui/react-dialog": "^1.1.6",
@@ -21,10 +28,17 @@
     "@tanstack/react-router": "^1.114.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fflate": "^0.8.3",
+    "heic2any": "^0.0.4",
     "lucide-react": "^0.475.0",
+    "marked": "^18.2.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.1",
+    "turndown": "^7.2.5",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -34,6 +48,7 @@
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
+    "@types/turndown": "^5.0.6",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.20.1",

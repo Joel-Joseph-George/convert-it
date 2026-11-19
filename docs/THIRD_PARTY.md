@@ -25,6 +25,16 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `@radix-ui/react-dialog` | `^1.1.6` | MIT | Accessible modal dialog primitives |
 | `@radix-ui/react-dropdown-menu` | `^2.1.6` | MIT | Accessible menu and popover primitives |
 | `@radix-ui/react-tooltip` | `^1.1.8` | MIT | Accessible tooltip primitives |
+| `pdf-lib` | `^1.17.1` | MIT | PDF manipulation (merge, split, rotate, remove, bundle) |
+| `pdfjs-dist` | `^6.5.438` | Apache-2.0 | PDF rendering to images and raw text extraction |
+| `xlsx` | `^0.18.5` | Apache-2.0 | Tabular data conversions (Excel, CSV, JSON) |
+| `fflate` | `^0.8.3` | MIT | High-performance client-side ZIP compression |
+| `marked` | `^18.2.1` | MIT | Markdown to HTML compiler |
+| `turndown` | `^7.2.5` | MIT | HTML to Markdown converter |
+| `heic2any` | `^0.0.4` | MIT | Apple HEIC/HEIF to JPEG/PNG decoding |
+| `@ffmpeg/ffmpeg` | `^0.12.15` | MIT | WebAssembly FFmpeg runner for browser audio/video |
+| `@ffmpeg/util` | `^0.12.2` | MIT | FFmpeg utilities for file fetching and memory management |
+| `@ffmpeg/core` | `^0.12.10` | GPL-2.0-or-later | Single-threaded FFmpeg WebAssembly core binary |
 
 ### Development Dependencies
 
@@ -47,6 +57,7 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `@testing-library/react` | `^16.2.0` | MIT | React component testing utilities |
 | `@testing-library/jest-dom` | `^6.6.3` | MIT | Custom DOM element matchers for Vitest |
 | `jsdom` | `^26.0.0` | MIT | Pure JavaScript DOM implementation for testing |
+| `@types/turndown` | `^5.0.6` | MIT | TypeScript type definitions for Turndown |
 
 ---
 

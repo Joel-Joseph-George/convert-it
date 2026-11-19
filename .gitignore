@@ -5,6 +5,7 @@ dist-ssr/
 *.local
 .npm/
 .eslintcache
+apps/web/public/vendor/
 
 # Python / Backend
 __pycache__/

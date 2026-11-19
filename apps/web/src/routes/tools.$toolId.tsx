@@ -9,6 +9,7 @@ import { DropZone } from '@/components/tool/DropZone';
 import { FormatPills } from '@/components/tool/FormatPills';
 import { OptionsPanel } from '@/components/tool/OptionsPanel';
 import { FileQueue } from '@/components/tool/FileQueue';
+import { DataPreviewTable } from '@/components/tool/DataPreviewTable';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/tools/$toolId')({
@@ -29,7 +30,8 @@ function ToolPage(): React.ReactElement {
     setTargetFormat,
     setOption,
     initOptions,
-    startFakeConversion,
+    startConversion,
+    downloadAllZip,
   } = useQueueStore();
 
   const toolItems = items[toolId] || [];
@@ -72,7 +74,7 @@ function ToolPage(): React.ReactElement {
   };
 
   const handleConvert = (): void => {
-    startFakeConversion(tool.id);
+    startConversion(tool.id);
   };
 
   const hasPendingItems = toolItems.some(
@@ -129,11 +131,18 @@ function ToolPage(): React.ReactElement {
         categoryName={tool.category}
       />
 
+      {/* Data Preview Table for Tabular Data Tools */}
+      {tool.category === 'data' && toolItems.length > 0 && (
+        <DataPreviewTable file={toolItems[0]?.file} />
+      )}
+
       {/* File Queue */}
       <FileQueue
         items={toolItems}
         onRemoveItem={(id) => removeItem(tool.id, id)}
         onClearQueue={() => clearQueue(tool.id)}
+        onRetryItem={() => startConversion(tool.id)}
+        onDownloadAllZip={() => downloadAllZip(tool.id)}
       />
 
       {/* Target Format Selector */}

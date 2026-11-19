@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import { getToolById } from '../registry/tools';
+import { runConversion } from '../engines/registry';
+import { createZipArchive, ZipFileEntry } from '../engines/zipUtil';
+import { EngineError } from '../engines/types';
 
 export type QueueItemStatus =
   | 'ready'
@@ -25,6 +29,7 @@ export interface QueueItem {
     code: string;
     message: string;
   };
+  abortController?: AbortController;
 }
 
 export interface QueueState {
@@ -50,8 +55,9 @@ export interface QueueState {
     toolId: string,
     defaults: Record<string, string | number | boolean>
   ) => void;
-  startFakeConversion: (toolId: string) => void;
   cancelItem: (toolId: string, itemId: string) => void;
+  startConversion: (toolId: string) => Promise<void>;
+  downloadAllZip: (toolId: string) => Promise<void>;
 }
 
 function generateId(): string {
@@ -93,6 +99,9 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   removeItem: (toolId: string, itemId: string) => {
     const current = get().items[toolId] || [];
     const itemToRemove = current.find((i) => i.id === itemId);
+    if (itemToRemove?.abortController) {
+      itemToRemove.abortController.abort();
+    }
     if (itemToRemove?.result?.url) {
       URL.revokeObjectURL(itemToRemove.result.url);
     }
@@ -108,6 +117,9 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   clearQueue: (toolId: string) => {
     const current = get().items[toolId] || [];
     for (const item of current) {
+      if (item.abortController) {
+        item.abortController.abort();
+      }
       if (item.result?.url) {
         URL.revokeObjectURL(item.result.url);
       }
@@ -142,7 +154,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   setTargetFormat: (toolId: string, format: string) => {
     set((state) => {
       const current = state.items[toolId] || [];
-      // Also update uncompleted queue items
       const updatedItems = current.map((item) =>
         item.status === 'ready' ? { ...item, targetFormat: format } : item
       );
@@ -188,55 +199,166 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   },
 
   cancelItem: (toolId: string, itemId: string) => {
+    const current = get().items[toolId] || [];
+    const item = current.find((i) => i.id === itemId);
+    if (item?.abortController) {
+      item.abortController.abort();
+    }
     get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
-  // Fake conversion progress runner for Phase 1 demonstration
-  startFakeConversion: (toolId: string) => {
+  startConversion: async (toolId: string) => {
+    const tool = getToolById(toolId);
+    if (!tool) return;
+
     const current = get().items[toolId] || [];
     const pending = current.filter(
       (i) => i.status === 'ready' || i.status === 'failed'
     );
     if (pending.length === 0) return;
 
-    pending.forEach((item, index) => {
-      // Stagger start
-      setTimeout(() => {
+    const toolOptions = get().options[toolId] || {};
+
+    // For tools that combine all files together (like merge-pdf)
+    if (tool.id === 'merge-pdf' || tool.id === 'images-to-pdf') {
+      const controller = new AbortController();
+      const files = pending.map((p) => p.file);
+
+      pending.forEach((item) => {
         get().updateItem(toolId, item.id, {
           status: 'converting',
           progress: 10,
+          abortController: controller,
         });
+      });
 
-        let prog = 10;
-        const interval = setInterval(() => {
-          prog += 25;
-          if (prog < 100) {
-            get().updateItem(toolId, item.id, { progress: prog });
-          } else {
-            clearInterval(interval);
-            const baseName = item.file.name.substring(
-              0,
-              item.file.name.lastIndexOf('.')
-            ) || item.file.name;
-            const ext = item.targetFormat;
-            const dummyBlob = new Blob(['sample-converted-data'], {
-              type: 'application/octet-stream',
-            });
-            const url = URL.createObjectURL(dummyBlob);
+      try {
+        const results = await runConversion(
+          tool,
+          files,
+          toolOptions,
+          tool.outputs[0]?.value || 'pdf',
+          {
+            onProgress: (prog) => {
+              pending.forEach((item) => {
+                get().updateItem(toolId, item.id, { progress: prog });
+              });
+            },
+            signal: controller.signal,
+          }
+        );
 
+        const firstResult = results[0];
+        if (firstResult) {
+          const url = URL.createObjectURL(firstResult.blob);
+          pending.forEach((item, idx) => {
             get().updateItem(toolId, item.id, {
               status: 'done',
               progress: 100,
-              result: {
-                filename: `${baseName}.${ext}`,
-                blob: dummyBlob,
-                url,
-                sizeBytes: item.file.size * 0.85,
-              },
+              result:
+                idx === 0
+                  ? {
+                      filename: firstResult.filename,
+                      blob: firstResult.blob,
+                      url,
+                      sizeBytes: firstResult.sizeBytes,
+                    }
+                  : undefined,
             });
+          });
+        }
+      } catch (err) {
+        const isCancelled = controller.signal.aborted;
+        pending.forEach((item) => {
+          get().updateItem(toolId, item.id, {
+            status: isCancelled ? 'cancelled' : 'failed',
+            error: {
+              code: err instanceof EngineError ? err.code : 'CONVERSION_FAILED',
+              message: (err as Error).message,
+            },
+          });
+        });
+      }
+      return;
+    }
+
+    // Process items individually
+    for (const item of pending) {
+      const controller = new AbortController();
+      get().updateItem(toolId, item.id, {
+        status: 'converting',
+        progress: 0,
+        abortController: controller,
+        error: undefined,
+      });
+
+      try {
+        const results = await runConversion(
+          tool,
+          [item.file],
+          toolOptions,
+          item.targetFormat,
+          {
+            onProgress: (prog) => {
+              get().updateItem(toolId, item.id, { progress: prog });
+            },
+            signal: controller.signal,
           }
-        }, 150);
-      }, index * 200);
-    });
+        );
+
+        const res = results[0];
+        if (res) {
+          const url = URL.createObjectURL(res.blob);
+          get().updateItem(toolId, item.id, {
+            status: 'done',
+            progress: 100,
+            result: {
+              filename: res.filename,
+              blob: res.blob,
+              url,
+              sizeBytes: res.sizeBytes,
+            },
+          });
+        }
+      } catch (err) {
+        const isCancelled = controller.signal.aborted;
+        get().updateItem(toolId, item.id, {
+          status: isCancelled ? 'cancelled' : 'failed',
+          error: {
+            code: err instanceof EngineError ? err.code : 'CONVERSION_FAILED',
+            message: (err as Error).message,
+          },
+        });
+      }
+    }
+  },
+
+  downloadAllZip: async (toolId: string) => {
+    const current = get().items[toolId] || [];
+    const doneItems = current.filter(
+      (i) => i.status === 'done' && i.result?.blob
+    );
+    if (doneItems.length === 0) return;
+
+    const entries: ZipFileEntry[] = [];
+    for (const item of doneItems) {
+      if (item.result?.blob) {
+        const arrayBuf = await item.result.blob.arrayBuffer();
+        entries.push({
+          name: item.result.filename,
+          data: new Uint8Array(arrayBuf),
+        });
+      }
+    }
+
+    const zipBlob = await createZipArchive(entries);
+    const zipUrl = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = zipUrl;
+    a.download = `${toolId}_converted_files.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(zipUrl), 60000);
   },
 }));

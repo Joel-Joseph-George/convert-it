@@ -10,6 +10,7 @@ export interface FileQueueProps {
   onRemoveItem: (id: string) => void;
   onClearQueue: () => void;
   onRetryItem?: (id: string) => void;
+  onDownloadAllZip?: () => void;
   className?: string;
 }
 
@@ -18,6 +19,7 @@ export const FileQueue: React.FC<FileQueueProps> = ({
   onRemoveItem,
   onClearQueue,
   onRetryItem,
+  onDownloadAllZip,
   className,
 }) => {
   const completedCount = items.filter((i) => i.status === 'done').length;
@@ -57,7 +59,12 @@ export const FileQueue: React.FC<FileQueueProps> = ({
 
         <div className="flex items-center gap-2">
           {completedCount > 1 && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-primary">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDownloadAllZip}
+              className="h-7 text-xs gap-1.5 text-primary"
+            >
               <Download className="h-3 w-3 stroke-[2]" />
               <span>Download all (ZIP)</span>
             </Button>

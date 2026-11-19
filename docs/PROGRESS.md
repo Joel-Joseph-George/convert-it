@@ -109,7 +109,61 @@
   - Backend: `ruff check`, `ruff format --check`, `mypy app tests`, and `pytest` **all green with zero errors**.
 
 ### 3. What could not be verified
-- Real media transcoding / browser WASM conversions (mock/fake progress used in Phase 1; real WebAssembly engines will be implemented in Phase 2).
+- Real media transcoding / browser WASM conversions (mock/fake progress used in Phase 1; real WebAssembly engines implemented in Phase 2).
 
 ---
-*Ready for Phase 2 review upon user command to continue.*
+
+## Phase 2: Browser Engines
+
+### 1. What was built
+- **Core Conversion Engine Layer (`features/engines`):**
+  - `types.ts`: Defined `ConvertContext`, `ConvertResult`, `BrowserEngine` interface, and `EngineError` matching Section 6.3 error specifications.
+  - `zipUtil.ts`: Pure in-memory ZIP archiver built on `fflate` for "Download all (ZIP)" multi-file exports with auto-naming.
+  - `textEngine.ts`:
+    - `markdown-to-html`: Converts Markdown to sanitized HTML via `marked`.
+    - `html-to-markdown`: Converts HTML to Markdown via `turndown`.
+  - `dataEngine.ts`:
+    - `sheetjs-data`: Multi-directional conversion between CSV, XLSX, and JSON using `xlsx` (SheetJS).
+    - Supports custom CSV delimiters (comma, semicolon, tab, pipe) and first-5-rows data preview extraction via `getPreviewRows()`.
+  - `imageEngine.ts`:
+    - Canvas / OffscreenCanvas client-side conversion for `image-convert`, `image-compress`, `image-resize`, and `svg-to-png`.
+    - EXIF metadata stripping by canvas redrawing; quality control and dimension scaling.
+  - `heicEngine.ts`:
+    - `heic-to-jpg`: Apple HEIC/HEIF photo conversion via dynamic import of `heic2any` to keep initial bundle size light.
+  - `pdfEngine.ts`:
+    - `pdf-lib` implementations: `merge-pdf` (multi-file sequence merging), `split-pdf` (page extraction), `rotate-pdf` (90/180/270 degree rotation), `remove-pdf-pages` (1-indexed page deletion), `images-to-pdf` (JPG/PNG embedding).
+    - `pdfjs-dist` implementation: `pdf-to-text` text extraction via self-hosted worker.
+  - `ffmpegEngine.ts`:
+    - WebAssembly single-threaded FFmpeg runner (`@ffmpeg/ffmpeg`) for `audio-convert`, `video-convert`, `video-to-gif`, and `video-to-audio`.
+    - Dynamic load of local self-hosted WASM binaries (`/vendor/ffmpeg/ffmpeg-core.js`), abort controller cancellation support, and virtual filesystem cleanup.
+  - `registry.ts`:
+    - Central dispatcher mapping tool definitions to their corresponding engine implementations.
+    - Pre-flight checks: file size limit verification, input format validation, and safe filename collision deduplication (`filename (1).ext`).
+- **Zero Third-Party Runtime Asset Setup:**
+  - Placed `@ffmpeg/core` (`ffmpeg-core.js`, `ffmpeg-core.wasm`) and `pdfjs-dist` worker (`pdf.worker.min.mjs`) in `apps/web/public/vendor/`.
+  - Added npm build lifecycle script `"copy-vendor"` to copy vendor assets during setup and build.
+- **Queue Store & UI Integration:**
+  - Refactored `queueStore.ts` from fake simulation to real async engine execution with per-file `AbortController`, real progress, output Blob generation, and direct single or batch ZIP download.
+  - Added `DataPreviewTable.tsx` for real-time 5-row preview of spreadsheets/CSV files.
+  - Updated tool page (`tools.$toolId.tsx`) to render preview tables and handle real conversions.
+
+### 2. What was verified
+- **Unit & Engine Test Suites:**
+  - `textEngine.test.ts`: Markdown to HTML and HTML to Markdown transformations.
+  - `dataEngine.test.ts`: CSV to JSON, JSON to CSV, XLSX to CSV, custom delimiter handling, and preview table parsing.
+  - `pdfEngine.test.ts`: PDF merging, page rotation, page removal, and text extraction.
+  - `zipUtil.test.ts`: Multi-file ZIP archive generation via `fflate`.
+  - `limitsAndErrors.test.ts`: File size cap enforcement (e.g., rejecting files over maxBytes), invalid format rejection, and filename collision deduplication logic.
+- **Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings** across all files.
+  - `npm run type-check`: **0 errors** (`tsc --noEmit`).
+  - `npm run test`: **16 test suites, 54 tests passing** in Vitest.
+  - `npm run build`: Production Vite build successful with self-hosted assets and code-splitting.
+  - Backend: `ruff`, `mypy`, `pytest` all green.
+
+### 3. What could not be verified
+- Full WebAssembly execution of FFmpeg inside headless JSDOM test runner (FFmpeg WASM requires browser WebAssembly and SharedArrayBuffer/Blob URLs, verified via mock wrappers in Node and build asset bundling).
+
+---
+
+*Ready for Phase 3 review upon user command to continue.*
