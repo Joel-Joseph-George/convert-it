@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useQueueStore } from '@/features/queue/queueStore';
+import * as serverConversionModule from '@/features/server/serverConversion';
 
 describe('Queue Store State Machine', () => {
   beforeEach(() => {
@@ -62,5 +63,33 @@ describe('Queue Store State Machine', () => {
     useQueueStore.getState().setOption('image-convert', 'quality', 95);
     const opts = useQueueStore.getState().options['image-convert'];
     expect(opts?.['quality']).toBe(95);
+  });
+
+  it('routes server tools through runServerConversion', async () => {
+    const file = new File(['%PDF-1.4'], 'report.pdf', { type: 'application/pdf' });
+    useQueueStore.getState().addFiles('pdf-to-word', [file], 'docx');
+
+    const mockBlob = new Blob(['docx content'], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+
+    const spy = vi
+      .spyOn(serverConversionModule, 'runServerConversion')
+      .mockImplementation(async (_toolId, _file, _options, context) => {
+        context.onProgress(50);
+        return {
+          filename: 'report.docx',
+          blob: mockBlob,
+          sizeBytes: 1024,
+        };
+      });
+
+    await useQueueStore.getState().startConversion('pdf-to-word');
+
+    expect(spy).toHaveBeenCalled();
+    const items = useQueueStore.getState().items['pdf-to-word'] ?? [];
+    expect(items[0]?.status).toBe('done');
+    expect(items[0]?.progress).toBe(100);
+    expect(items[0]?.result?.filename).toBe('report.docx');
   });
 });

@@ -22,6 +22,9 @@ from app.core.errors import AppError, app_error_handler
 from app.core.logging import logger, setup_logging
 from app.core.security import get_client_ip
 from app.engines.echo import echo_engine
+from app.engines.libreoffice import convert_with_libreoffice
+from app.engines.pdf_to_excel import convert_pdf_to_excel
+from app.engines.pdf_to_word import convert_pdf_to_word
 from app.engines.youtube import download_youtube
 from app.jobs.cleanup import run_cleanup_loop, wipe_temp_directory
 from app.jobs.queue import JobQueue, MemoryJobQueue, RedisJobQueue
@@ -59,10 +62,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # 4. Job Runner
     runner = JobRunner(store, queue)
-    # Register echo engines for testing and verification
+    # Register engines for conversion tools
     runner.register_engine("echo-convert", echo_engine)
     runner.register_engine("test-convert", echo_engine)
     runner.register_engine("youtube-download", download_youtube)
+    runner.register_engine("pdf-to-word", convert_pdf_to_word)
+    runner.register_engine("pdf-to-excel", convert_pdf_to_excel)
+    runner.register_engine("word-to-pdf", convert_with_libreoffice)
+    runner.register_engine("excel-to-pdf", convert_with_libreoffice)
+    runner.register_engine("powerpoint-to-pdf", convert_with_libreoffice)
     await runner.start()
 
     # 5. Background Cleanup Task

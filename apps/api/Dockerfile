@@ -27,7 +27,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && if [ "$INSTALL_LIBREOFFICE" = "true" ]; then \
         apt-get install -y --no-install-recommends \
         libreoffice-writer \
-        libreoffice-calc; \
+        libreoffice-calc \
+        libreoffice-impress; \
     fi \
     && rm -rf /var/lib/apt/lists/*
 

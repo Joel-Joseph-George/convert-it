@@ -33,6 +33,7 @@ ERROR_STATUS_MAP: dict[str, tuple[int, bool]] = {
     "FILE_TOO_LARGE": (413, False),
     "UNSUPPORTED_FILE_TYPE": (415, False),
     "FILE_CORRUPT": (422, False),
+    "NO_TABLES_FOUND": (422, False),
     "TOOL_NOT_FOUND": (404, False),
     "TOOL_DISABLED": (503, False),
     "INVALID_OPTIONS": (422, False),

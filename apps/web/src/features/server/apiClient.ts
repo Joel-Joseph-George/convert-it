@@ -28,6 +28,7 @@ export interface LimitsResponse {
     light: number;
   };
   maxQueueLength: number;
+  serverTools?: Record<string, boolean>;
 }
 
 export interface YouTubeJobPayload {

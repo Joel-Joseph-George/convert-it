@@ -11,6 +11,9 @@ import { OptionsPanel } from '@/components/tool/OptionsPanel';
 import { FileQueue } from '@/components/tool/FileQueue';
 import { DataPreviewTable } from '@/components/tool/DataPreviewTable';
 import { Button } from '@/components/ui/button';
+import { useServerHealth } from '@/features/server/useServerHealth';
+import { ServerWakeBanner } from '@/features/server/ServerWakeBanner';
+import { ErrorAlert } from '@/components/shared/ErrorAlert';
 
 export const Route = createFileRoute('/tools/$toolId')({
   component: ToolPage,
@@ -34,9 +37,21 @@ function ToolPage(): React.ReactElement {
     downloadAllZip,
   } = useQueueStore();
 
-  const toolItems = items[toolId] || [];
+  const { isWakingUp, serverError, limits } = useServerHealth();
+
+  const isServerTool = tool?.engine.kind === 'server';
+  const isToolUnavailable =
+    isServerTool &&
+    limits?.serverTools !== undefined &&
+    limits.serverTools[tool.id] === false;
+
+  const effectiveMaxFileSizeMB =
+    (isServerTool && limits?.maxUploadMB
+      ? limits.maxUploadMB
+      : tool?.limits.maxFileSizeMB) ?? 25;
   const currentFormat = selectedFormat[toolId] || tool?.outputs[0]?.value || '';
   const currentOptions = options[toolId] || {};
+  const toolItems = items[toolId] || [];
 
   React.useEffect(() => {
     if (tool && tool.options.length > 0) {
@@ -121,11 +136,34 @@ function ToolPage(): React.ReactElement {
         <PrivacyLine engine={tool.engine.kind} />
       </div>
 
+      {/* Server wake up banner */}
+      {isServerTool && isWakingUp && <ServerWakeBanner />}
+
+      {/* Server offline error */}
+      {isServerTool && serverError && (
+        <ErrorAlert
+          error={{
+            code: 'SERVER_OFFLINE',
+            message: 'The conversion server is currently offline or unreachable.',
+          }}
+        />
+      )}
+
+      {/* Server tool disabled error */}
+      {isToolUnavailable && (
+        <ErrorAlert
+          error={{
+            code: 'TOOL_DISABLED',
+            message: 'This tool is unavailable on the server because the required system engine is not installed.',
+          }}
+        />
+      )}
+
       {/* DropZone */}
       <DropZone
         onFilesAdded={handleFilesAdded}
         acceptedExtensions={tool.inputs.extensions}
-        maxFileSizeMB={tool.limits.maxFileSizeMB}
+        maxFileSizeMB={effectiveMaxFileSizeMB}
         multiple={tool.inputs.multiple}
         compact={toolItems.length > 0}
         categoryName={tool.category}
@@ -167,7 +205,7 @@ function ToolPage(): React.ReactElement {
           <Button
             size="lg"
             onClick={handleConvert}
-            disabled={!hasPendingItems || isConverting}
+            disabled={!hasPendingItems || isConverting || isToolUnavailable}
             className="w-full h-11 text-sm font-medium gap-2 shadow-none"
           >
             <Play className="h-4 w-4 fill-current" />

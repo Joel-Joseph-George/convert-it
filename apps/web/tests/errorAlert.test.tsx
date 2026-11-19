@@ -18,6 +18,13 @@ describe('ErrorAlert and errorToView', () => {
     expect(view.actionLabel).toBe('Choose audio only');
   });
 
+  it('maps NO_TABLES_FOUND to warning with OCR guidance', () => {
+    const view = errorToView({ code: 'NO_TABLES_FOUND' });
+    expect(view.title).toBe('No tables found');
+    expect(view.severity).toBe('warning');
+    expect(view.message).toContain('Scanned PDFs may need OCR');
+  });
+
   it('renders ErrorAlert with title, description, and triggers action callback', () => {
     const handleAction = vi.fn();
     render(

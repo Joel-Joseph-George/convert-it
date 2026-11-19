@@ -87,6 +87,17 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
         actionKind: 'clear',
       };
 
+    case 'NO_TABLES_FOUND':
+      return {
+        title: 'No tables found',
+        message:
+          defaultMsg ||
+          'No tabular data was detected in this document. Scanned PDFs may need OCR.',
+        severity: 'warning',
+        actionLabel: 'Try another file',
+        actionKind: 'clear',
+      };
+
     case 'ERR_UPSTREAM_BLOCKED':
     case 'UPSTREAM_BLOCKED':
       return {

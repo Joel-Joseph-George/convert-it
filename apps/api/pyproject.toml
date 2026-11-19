@@ -16,6 +16,9 @@ dependencies = [
     "python-multipart>=0.0.20",
     "redis>=5.0.0",
     "yt-dlp>=2025.1.1",
+    "pdf2docx>=0.5.8",
+    "pdfplumber>=0.11.0",
+    "openpyxl>=3.1.0",
 ]
 
 [project.optional-dependencies]
@@ -65,7 +68,7 @@ check_untyped_defs = true
 no_implicit_optional = true
 
 [[tool.mypy.overrides]]
-module = ["filetype.*", "yt_dlp.*"]
+module = ["filetype.*", "yt_dlp.*", "pdf2docx.*", "pdfplumber.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

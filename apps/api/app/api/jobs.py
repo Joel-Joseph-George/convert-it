@@ -115,7 +115,16 @@ async def create_convert_job(
 
     # Determine job class based on toolId
     job_class: JobClass = (
-        "heavy" if toolId in ("pdf-to-word", "pdf-to-excel", "word-to-pdf") else "light"
+        "heavy"
+        if toolId
+        in (
+            "pdf-to-word",
+            "pdf-to-excel",
+            "word-to-pdf",
+            "excel-to-pdf",
+            "powerpoint-to-pdf",
+        )
+        else "light"
     )
 
     record = JobRecord(

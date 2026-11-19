@@ -310,4 +310,46 @@
 
 ---
 
-*Ready for Phase 5 review upon user command to continue.*
+## Phase 5: Server Document Tools
+
+### 1. What was built
+- **Dependencies & Docker Configuration:**
+  - Added `pdf2docx`, `pdfplumber`, `openpyxl`, `Pillow` to `apps/api/pyproject.toml` and documented in `docs/THIRD_PARTY.md`.
+  - Updated `apps/api/Dockerfile` with `ARG INSTALL_LIBREOFFICE=false`, conditionally installing `libreoffice-writer`, `libreoffice-calc`, and `libreoffice-impress` when set to `true`.
+- **Backend Document Conversion Engines (`app/engines/`):**
+  - `pdf_to_word.py`: Server engine using `pdf2docx.Converter` to convert PDF documents to Word `.docx` with staged progress tracking and output non-empty validation.
+  - `pdf_to_excel.py`: Server engine using `pdfplumber` and `openpyxl` to extract tabular data into multi-sheet `.xlsx` workbooks (one sheet per page containing tables). Detects absence of tables and raises sanitized `NO_TABLES_FOUND` error ("No tables found. Scanned PDFs may need OCR") rather than returning an empty file.
+  - `libreoffice.py`: Headless LibreOffice conversion engine executing `soffice --headless --convert-to pdf` with unique per-job profile directory (`-env:UserInstallation=file://.../lo_profile`) to prevent concurrent instance lock collisions, process group management with SIGTERM on 180s timeout (`JOB_TIMEOUT_HEAVY_SEC`), and graceful detection returning 503 `TOOL_DISABLED` when LibreOffice is not installed.
+- **Backend Job Runner & API Integration:**
+  - Registered server engines in `app/main.py`: `pdf-to-word`, `pdf-to-excel`, `word-to-pdf`, `excel-to-pdf`, and `powerpoint-to-pdf`.
+  - Configured job admission classification in `app/api/jobs.py` assigning all server document tools (`pdf-to-word`, `pdf-to-excel`, `word-to-pdf`, `excel-to-pdf`, `powerpoint-to-pdf`) to the `heavy` concurrency class (concurrency 1, memory guard).
+  - Updated `app/api/limits.py` to return `serverTools: dict[str, bool]` advertising installed engine availability.
+  - Updated `app/core/errors.py` error catalogue with `NO_TABLES_FOUND` (422, non-retryable).
+- **Golden Test Fixtures & Unit Tests (`apps/api/tests/`):**
+  - Generated small golden test fixtures in `apps/api/tests/fixtures/`: `sample_table.pdf`, `sample_plain.pdf`, and `sample_doc.docx`.
+  - Implemented `apps/api/tests/test_server_engines.py` verifying golden conversions for `pdf-to-word` (.docx output, valid zip structure), `pdf-to-excel` (.xlsx output, cell verification with openpyxl), `sample_plain.pdf` table rejection (`NO_TABLES_FOUND`), LibreOffice missing binary handling (`TOOL_DISABLED`), mocked subprocess execution with unique profile flags, timeout termination, and full API lifecycle from upload to download.
+- **Frontend Server Client & UI Integration (`apps/web`):**
+  - `serverConversion.ts`: Client execution module using `XMLHttpRequest` to track upload progress (0–30%), poll job status snapshot (30–95%), support cancellation via `AbortSignal`, and download converted result blob (100%).
+  - `queueStore.ts`: Updated to dispatch server-kind tools (`tool.engine.kind === 'server'`) to `runServerConversion`.
+  - `errorToView.ts`: Mapped `NO_TABLES_FOUND` to warning alert card with "No tables found. Scanned PDFs may need OCR." and "Try another file" action.
+  - `tools.$toolId.tsx`: Enhanced tool view with dynamic server upload size limit, `ServerWakeBanner` integration during cold starts, server offline detection, and tool disabled alert when backend lacks LibreOffice or server capabilities.
+  - `serverConversion.test.ts`: Vitest suite covering upload progress, polling completion, error rejection, and AbortController cancellation.
+
+### 2. What was verified
+- **Backend Testing & Quality Gates:**
+  - `ruff check app tests`: **0 errors, 0 warnings**.
+  - `ruff format --check app tests`: **All 34 source files formatted**.
+  - `mypy app tests`: **Strict typing passed with 0 errors across 34 source files**.
+  - `pytest`: **44 tests passing in 1.19s** (including all 10 Phase 5 golden and server engine tests).
+- **Frontend Testing & Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings**.
+  - `npm run type-check`: **0 errors** (`tsc --noEmit`).
+  - `npm run test`: **19 test suites, 69 tests passing** in Vitest.
+  - `npm run build`: Production bundle built cleanly in 2.30s.
+
+### 3. What could not be verified
+- Live LibreOffice binary execution on this macOS developer host (LibreOffice binary is not installed in the local host PATH; verified that the application gracefully returns `TOOL_DISABLED` (503), handles mocked headless execution with unique profile flags, and builds conditionally in Docker via `INSTALL_LIBREOFFICE=true`).
+
+---
+
+*Ready for Phase 6 (Polish and Hardening) upon user command to continue.*

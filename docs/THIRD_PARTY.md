@@ -78,6 +78,9 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `python-multipart` | `>=0.0.20` | Apache-2.0 | Multipart form-data streaming parsing for FastAPI |
 | `redis` | `>=5.0.0` | MIT | Async Redis client for state and queues |
 | `yt-dlp` | `>=2025.1.1` | Unlicense | YouTube metadata extraction and video/audio download |
+| `pdf2docx` | `>=0.5.8` | GPL-3.0 | PDF to Microsoft Word (.docx) document conversion |
+| `pdfplumber` | `>=0.11.0` | MIT | PDF table extraction and structural analysis |
+| `openpyxl` | `>=3.1.0` | MIT | Excel spreadsheet generation and multi-sheet workbook export |
 
 ### Development Dependencies
 

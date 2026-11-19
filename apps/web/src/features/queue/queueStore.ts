@@ -3,6 +3,7 @@ import { getToolById } from '../registry/tools';
 import { runConversion } from '../engines/registry';
 import { createZipArchive, ZipFileEntry } from '../engines/zipUtil';
 import { EngineError } from '../engines/types';
+import { runServerConversion } from '../server/serverConversion';
 
 export type QueueItemStatus =
   | 'ready'
@@ -293,20 +294,31 @@ export const useQueueStore = create<QueueState>((set, get) => ({
       });
 
       try {
-        const results = await runConversion(
-          tool,
-          [item.file],
-          toolOptions,
-          item.targetFormat,
-          {
+        let res: { filename: string; blob: Blob; sizeBytes: number } | undefined;
+
+        if (tool.engine.kind === 'server') {
+          res = await runServerConversion(tool.id, item.file, toolOptions, {
             onProgress: (prog) => {
               get().updateItem(toolId, item.id, { progress: prog });
             },
             signal: controller.signal,
-          }
-        );
+          });
+        } else {
+          const results = await runConversion(
+            tool,
+            [item.file],
+            toolOptions,
+            item.targetFormat,
+            {
+              onProgress: (prog) => {
+                get().updateItem(toolId, item.id, { progress: prog });
+              },
+              signal: controller.signal,
+            }
+          );
+          res = results[0];
+        }
 
-        const res = results[0];
         if (res) {
           const url = URL.createObjectURL(res.blob);
           get().updateItem(toolId, item.id, {
@@ -320,13 +332,26 @@ export const useQueueStore = create<QueueState>((set, get) => ({
             },
           });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         const isCancelled = controller.signal.aborted;
+        let errCode = 'CONVERSION_FAILED';
+        let errMsg = 'Conversion failed';
+
+        if (err instanceof EngineError) {
+          errCode = err.code;
+          errMsg = err.message;
+        } else if (err && typeof err === 'object' && 'code' in err) {
+          errCode = String((err as { code: unknown }).code);
+          errMsg = String((err as { message?: unknown }).message ?? 'Server error');
+        } else if (err instanceof Error) {
+          errMsg = err.message;
+        }
+
         get().updateItem(toolId, item.id, {
           status: isCancelled ? 'cancelled' : 'failed',
           error: {
-            code: err instanceof EngineError ? err.code : 'CONVERSION_FAILED',
-            message: (err as Error).message,
+            code: errCode,
+            message: errMsg,
           },
         });
       }
