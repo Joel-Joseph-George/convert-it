@@ -48,6 +48,7 @@ flowchart TD
             PDFJS["pdf-lib & pdfjs-dist\n(Merge, Split, Render)"]
             SheetJS["xlsx (SheetJS)\n(CSV ↔ Excel ↔ JSON)"]
             TextImg["marked, turndown, heic2any\n(Markdown, HEIC, Image Canvas)"]
+            PDFChat["PDF.js → MiniLM worker → IndexedDB → top 5 excerpts"]
             Zip["fflate (Client ZIP Archiving)"]
         end
     end
@@ -67,6 +68,7 @@ flowchart TD
     end
 
     subgraph External ["External Upstream"]
+        Ollama["Ollama chat completions"]
         YouTube["YouTube Video & Audio Streams"]
     end
 
@@ -77,36 +79,45 @@ flowchart TD
     FastAPI --> Admission --> WorkerPool
     WorkerPool --> ServerEngines
     YTDLP -. "Canonical HTTPS Only" .-> YouTube
+    PDFChat -- "Question, matched text, recent turns" --> FastAPI
+    Admission -- "Light slot" --> Ollama
+    Ollama -- "Answer tokens via FastAPI" --> UI
     ServerEngines --> DiskCleaner
 ```
 
 ---
 
-## 🛠️ Supported Tools Catalogue (27 Converters)
+## 🛠️ Supported Tools Catalogue
+
+The directory contains **30 tools**, including Chat with PDF. The home page also offers the YouTube downloader.
 
 | Category | Tool | Input Format | Output Format | Engine |
 |---|---|---|---|---|
 | **Audio** | Audio Converter | MP3, WAV, AAC, OGG, FLAC, M4A | MP3, WAV, AAC, OGG, FLAC, M4A | In your browser (WASM) |
-| **Audio** | Audio to MP3 | WAV, AAC, OGG, FLAC, M4A | MP3 | In your browser (WASM) |
-| **Audio** | Audio to WAV | MP3, AAC, OGG, FLAC, M4A | WAV | In your browser (WASM) |
-| **Video** | Video to MP4 | MOV, AVI, MKV, WEBM, FLV | MP4 | In your browser (WASM) |
-| **Video** | Video to WebM | MP4, MOV, AVI, MKV | WEBM | In your browser (WASM) |
+| **Video** | Video Converter | Video file | MP4, WebM | In your browser (WASM) |
+| **Video** | Video to GIF | Video clip | GIF | In your browser (WASM) |
 | **Video** | Extract Audio | MP4, MOV, AVI, MKV, WEBM | MP3, WAV, AAC, M4A | In your browser (WASM) |
 | **Image** | Image Converter | PNG, JPG, WEBP, AVIF, BMP | PNG, JPG, WEBP | In your browser (Canvas) |
 | **Image** | HEIC to JPG | HEIC, HEIF | JPG, PNG | In your browser (heic2any) |
 | **Image** | Compress Image | PNG, JPG, WEBP | Compressed output | In your browser (Canvas) |
-| **Image** | Image to PNG | JPG, WEBP, BMP, AVIF | PNG | In your browser (Canvas) |
-| **Image** | Image to WebP | JPG, PNG, BMP | WEBP | In your browser (Canvas) |
+| **Image** | SVG to PNG | SVG | PNG | In your browser (Canvas) |
+| **Image** | Resize Image | Image file | Resized image | In your browser (Canvas) |
+| **PDF** | Rotate PDF | PDF | Rotated pages | In your browser (pdf-lib) |
+| **PDF** | Remove PDF Pages | PDF | PDF | In your browser (pdf-lib) |
+| **PDF** | PDF to Text | Selectable PDF text | TXT | In your browser (pdfjs-dist) |
 | **PDF** | Merge PDF | Multiple PDF files | Combined PDF | In your browser (pdf-lib) |
 | **PDF** | Split / Extract PDF | PDF document | Extracted PDF / Page ranges | In your browser (pdf-lib) |
 | **PDF** | PDF to Images | PDF document | PNG, JPEG pages | In your browser (pdfjs-dist) |
 | **PDF** | Images to PDF | Multiple PNG, JPG images | Multi-page PDF | In your browser (pdf-lib) |
+| **Data** | Excel to JSON | Workbook | JSON | In your browser (SheetJS) |
+| **Data** | JSON to Excel | JSON records | XLSX | In your browser (SheetJS) |
 | **Data** | CSV to Excel | CSV | XLSX | In your browser (SheetJS) |
 | **Data** | Excel to CSV | XLSX, XLS | CSV | In your browser (SheetJS) |
 | **Data** | CSV to JSON | CSV | Formatted JSON | In your browser (SheetJS) |
 | **Data** | JSON to CSV | JSON array of objects | CSV | In your browser (SheetJS) |
 | **Text** | Markdown to HTML | Markdown (.md) | Clean HTML | In your browser (marked) |
 | **Text** | HTML to Markdown | HTML file | Clean Markdown (.md) | In your browser (turndown) |
+| **Documents** | Chat with PDF | PDF with selectable text | Streamed answer with clickable citations | Browser search, server generation (Ollama) |
 | **Documents** | PDF to Word | PDF document | Word (.docx) | Server (pdf2docx) |
 | **Documents** | PDF to Excel | PDF tables | Excel (.xlsx) | Server (pdfplumber) |
 | **Documents** | Word to PDF | DOCX, DOC | PDF | Server (LibreOffice) |
@@ -131,6 +142,15 @@ npm install
 ```
 
 ### 2. Run the Backend API
+
+To enable Chat with PDF, set `OLLAMA_API_KEY` and the following provider settings in `apps/api/.env` before starting the API. The other tools work with the key omitted.
+
+```dotenv
+OLLAMA_BASE_URL=https://ollama.com/v1
+OLLAMA_MODEL=deepseek-v4.1-flash
+```
+
+
 ```bash
 cd apps/api
 python3.12 -m venv .venv
@@ -149,6 +169,10 @@ npm run dev
 ```
 Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
+Open **Documents → Chat with PDF**, choose a selectable-text PDF up to 25 MB, then ask a question. Click a citation such as `[p. 4]` to view the original page. **Stop** cancels generation.
+
+The first dev start or production build downloads a pinned MiniLM model from Hugging Face. The built site serves the model and WASM files from its own origin. PDF extraction, embedding and retrieval run on the device. IndexedDB retains the excerpts and vectors for reopening a PDF. **Clear stored data** erases all saved PDF indexes and the current conversation. The server forwards the question, up to five matching excerpts and up to six recent messages to Ollama. ConvertIt does not log or persist this content.
+
 ---
 
 ## 🐳 Docker Deployment
@@ -156,6 +180,9 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 The repository includes a production-ready, multi-stage, non-root Dockerfile.
 
 ### Run with Docker Compose (Default In-Memory Queue)
+
+Compose reads `OLLAMA_API_KEY`, `OLLAMA_BASE_URL` and `OLLAMA_MODEL` from the repository-root `.env` or the shell. Copy `.env.example` to `.env` and replace the key placeholder to enable generation. Compose runs the API. Serve the frontend separately with its generated `vendor/` directory.
+
 ```bash
 docker compose up --build
 ```
@@ -170,6 +197,8 @@ docker compose --profile redis up --build
 docker build --build-arg INSTALL_LIBREOFFICE=true -t convertit-api apps/api
 ```
 
+If your network uses a private CA for PyPI, pass a trusted public CA bundle to the build with `--secret id=pip_ca,src=/path/to/ca-bundle.pem`. BuildKit mounts it only while pip installs dependencies.
+
 ---
 
 ## 🧪 Testing & Verification
@@ -183,8 +212,9 @@ ConvertIt enforces strict quality gates across both frontend and backend.
 cd apps/web
 npm run lint          # ESLint 9 (zero warnings allowed)
 npm run type-check    # Strict TypeScript compilation (tsc --noEmit)
-npm run test          # Vitest unit & component suites (69 tests)
-npm run test:e2e      # Playwright browser end-to-end tests (5 flows)
+npm run test          # Vitest unit & component suites
+npm run test:e2e      # Playwright browser end-to-end tests
+npm run eval:retrieval # Top-5 hit rate on ten fixture questions
 npm run build         # Production code-split bundle verification
 
 # ------------------------------
@@ -194,7 +224,7 @@ cd apps/api
 .venv/bin/ruff check app tests          # Ruff linter
 .venv/bin/ruff format --check app tests # Ruff format verification
 .venv/bin/mypy app tests                # Strict static type checker
-.venv/bin/pytest                        # Full integration & golden test suite (44 tests)
+.venv/bin/pytest                        # Full integration & golden test suite
 .venv/bin/pip-audit                     # Dependency vulnerability audit
 ```
 

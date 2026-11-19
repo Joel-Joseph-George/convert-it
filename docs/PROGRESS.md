@@ -403,3 +403,13 @@
 
 ### 3. Final Project Verification Summary
 All 7 phases (Phases 0 through 6) of ConvertIt are fully implemented, verified, tested, and documented strictly to the specification in `docs/ANTIGRAVITY_PROMPT.md`.
+
+## Chat with PDF
+
+The Documents catalogue now opens a dedicated chat page. PDF.js reads selectable text and renders cited pages. A browser worker embeds page-local excerpts with quantized MiniLM and caches them in IndexedDB. A normalized dot product selects up to five excerpts with similarity ≥0.25. Follow-up searches include the preceding user question. When no excerpt qualifies, the browser can answer that the information could not be found without contacting the server.
+
+Chunking targets 900 characters with up to 150 characters of complete-sentence overlap. The model tokenizer enforces a 256-token maximum including special tokens. A single sentence beyond that budget or the API's excerpt length limit produces a page-specific error. Password-protected PDFs require an unlocked copy, and scanned PDFs require OCR before indexing.
+
+The FastAPI endpoint streams answer text, maps provider errors, and releases the light-job slot and upstream connection on disconnect. Tests cover validation, privacy, SSE framing, retrieval, cache reuse, and opening a cited page. The ten-question fixture exercises the real browser model. A production-browser smoke test exercised FastAPI and the OpenAI SDK against a local streaming provider fixture. Live Ollama generation requires a configured provider key.
+
+Verification passed for 75 Vitest tests, six Playwright flows and 66 pytest tests. The expected page appeared in the top five for all ten fixture questions. ESLint, TypeScript, the production build, Ruff, strict mypy and the backend dependency audit also passed.

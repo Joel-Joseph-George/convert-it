@@ -13,7 +13,9 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY pyproject.toml README.md ./
-RUN pip install --no-cache-dir --upgrade pip && \
+RUN --mount=type=secret,id=pip_ca \
+    if [ -f /run/secrets/pip_ca ]; then export PIP_CERT=/run/secrets/pip_ca; fi && \
+    pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
 # Stage 2: Runtime image

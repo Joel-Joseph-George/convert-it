@@ -27,6 +27,8 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `@radix-ui/react-tooltip` | `^1.1.8` | MIT | Accessible tooltip primitives |
 | `pdf-lib` | `^1.17.1` | MIT | PDF manipulation (merge, split, rotate, remove, bundle) |
 | `pdfjs-dist` | `^6.5.438` | Apache-2.0 | PDF rendering to images and raw text extraction |
+| `@huggingface/transformers` | `^4.3.2` | Apache-2.0 | Local tokenizer and embedding pipeline |
+| Xenova/all-MiniLM-L6-v2 | `751bff3` | Apache-2.0 | Self-hosted quantized ONNX weights for document retrieval. [Model card](https://huggingface.co/Xenova/all-MiniLM-L6-v2) |
 | `xlsx` | `^0.18.5` | Apache-2.0 | Tabular data conversions (Excel, CSV, JSON) |
 | `fflate` | `^0.8.3` | MIT | High-performance client-side ZIP compression |
 | `marked` | `^18.2.1` | MIT | Markdown to HTML compiler |
@@ -75,6 +77,7 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `psutil` | `>=6.1.1` | BSD-3-Clause | Process and system monitoring (RAM guard) |
 | `filetype` | `>=1.2.0` | MIT | File type identification via magic numbers |
 | `httpx` | `>=0.28.1` | BSD-3-Clause | HTTP client for asynchronous requests |
+| `openai` | `>=2,<3` | Apache-2.0 | Async streaming client for Ollama's compatible endpoint |
 | `python-multipart` | `>=0.0.20` | Apache-2.0 | Multipart form-data streaming parsing for FastAPI |
 | `redis` | `>=5.0.0` | MIT | Async Redis client for state and queues |
 | `yt-dlp` | `>=2025.1.1` | Unlicense | YouTube metadata extraction and video/audio download |
