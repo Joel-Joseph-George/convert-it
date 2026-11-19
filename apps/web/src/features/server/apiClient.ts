@@ -63,7 +63,7 @@ export interface JobSnapshotResponse {
   } | null;
 }
 
-class ApiClientError extends Error implements AppError {
+export class ApiClientError extends Error implements AppError {
   code: string;
   retryable?: boolean;
   retryAfterSec?: number | null;
@@ -79,7 +79,7 @@ class ApiClientError extends Error implements AppError {
   }
 }
 
-function getHeaders(contentType?: string): Record<string, string> {
+export function getHeaders(contentType?: string): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
   };
