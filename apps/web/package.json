@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "copy-vendor": "mkdir -p public/vendor/ffmpeg public/vendor/pdfjs && cp ../../node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.* public/vendor/ffmpeg/ && cp ../../node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/vendor/pdfjs/",
+    "copy-vendor": "node scripts/copy-vendor.mjs",
     "postinstall": "npm run copy-vendor",
     "prebuild": "npm run copy-vendor",
     "predev": "npm run copy-vendor",
