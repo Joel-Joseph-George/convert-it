@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Table as TableIcon } from 'lucide-react';
-import { getPreviewRows, DataPreview } from '@/features/engines/dataEngine';
+import type { DataPreview } from '@/features/engines/dataEngine';
 import { cn } from '@/lib/utils';
 
 export interface DataPreviewTableProps {
@@ -27,7 +27,8 @@ export const DataPreviewTable: React.FC<DataPreviewTableProps> = ({
     setLoading(true);
     setError(null);
 
-    getPreviewRows(file)
+    import('@/features/engines/dataEngine')
+      .then((m) => m.getPreviewRows(file))
       .then((data) => {
         if (isMounted) {
           setPreview(data);

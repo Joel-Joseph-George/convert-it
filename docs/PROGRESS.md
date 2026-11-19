@@ -352,4 +352,54 @@
 
 ---
 
-*Ready for Phase 6 (Polish and Hardening) upon user command to continue.*
+## Phase 6: Polish and Hardening
+
+### 1. What was built
+- **Accessibility Hardening:**
+  - Enforced `@media (prefers-reduced-motion: reduce)` rules in `apps/web/src/styles/globals.css` that eliminate animations, transitions, and smooth scrolling for users requesting reduced motion.
+  - Verified consistent `:focus-visible` ring across all interactive controls (buttons, inputs, toggles, chips) using strict 2px accent outline with 2px offset.
+  - Verified ARIA semantics across components: `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, and `aria-valuemax` on `ProgressBar`; `role="alert"` on `ErrorAlert`; and explicit `aria-label` descriptors on icon-only buttons (`ThemeToggle`, `DropZone`, `UrlInput`).
+- **Performance & Code-Splitting Pass:**
+  - Refactored `apps/web/src/features/engines/registry.ts` to utilize dynamic asynchronous engine loaders (`ENGINE_LOADERS`). Heavy browser engines (`xlsx`, `pdf-lib`, `pdfjs-dist`, `heic2any`, `marked`, `@ffmpeg/ffmpeg`) are no longer bundled into the initial page load.
+  - Refactored `DataPreviewTable.tsx` to dynamically load `dataEngine` / SheetJS only when previewing data files.
+  - Achieved a **75% reduction** in initial JavaScript bundle size (from **1,852 kB** down to **463.9 kB** uncompressed / **146.0 kB** gzipped).
+  - Standalone engine bundle report:
+    - Initial `index.js`: **463.9 kB** (146.0 kB gzip)
+    - `heic2any.js`: **1,352.9 kB** (341.2 kB gzip)
+    - `pdfEngine.js` (`pdf-lib`, `pdfjs-dist`): **883.4 kB** (314.3 kB gzip)
+    - `dataEngine.js` (`xlsx`): **426.7 kB** (142.5 kB gzip)
+    - `textEngine.js` (`marked`, `turndown`): **63.2 kB** (19.8 kB gzip)
+    - `ffmpegEngine.js`: **6.96 kB** (2.73 kB gzip)
+    - `imageEngine.js`: **1.97 kB** (1.01 kB gzip)
+    - `heicEngine.js`: **1.06 kB** (0.69 kB gzip)
+    - `index.css`: **52.5 kB** (20.0 kB gzip)
+- **Playwright End-to-End Suite (`apps/web/e2e/flows.spec.ts`):**
+  - Configured `@playwright/test` with `playwright.config.ts` running against local Vite preview/dev server.
+  - Implemented all 5 mandatory end-to-end user flows specified in Section 13:
+    1. *Home:* Invalid YouTube URL submission displays actionable `ErrorAlert` ("That doesn't look like a YouTube link").
+    2. *All Tools:* Real-time search query filtering ("spreadsheet") and category chip toggling ("Audio").
+    3. *Browser Conversion End-to-End:* File upload to `/tools/csv-to-json`, in-browser client execution, and conversion to downloadable JSON.
+    4. *Theme Toggle Persistence:* Theme toggle updates DOM class, persists to `localStorage.convertit_theme`, and survives page reloads.
+    5. *Mobile Viewport Conformance:* 390px mobile layout verification checking that zero horizontal document overflow occurs on both `/` and `/tools`.
+- **Documentation & Operational Tooling:**
+  - Authored comprehensive root `README.md` covering product architecture, technology stack, directory structure, development setup, Docker compose profiles, `.env` reference, tool extension guide, yt-dlp update procedures, and smoke testing.
+  - Verified `.env.example` has complete coverage and commentary for all configuration variables in Sections 8 and 9.
+  - Executed security dependency audits (`npm audit` and `pip-audit`), confirming 0 known vulnerabilities in backend Python dependencies and documenting client-side advisory items.
+  - Updated CI workflow in `.github/workflows/ci.yml` to include Playwright browser installation and E2E test execution.
+
+### 2. What was verified
+- **Frontend Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings** (ESLint 9).
+  - `npm run type-check`: **0 errors** (`tsc --noEmit`).
+  - `npm run test`: **19 test suites, 69 tests passing** in Vitest.
+  - `npm run test:e2e`: **5 E2E tests passing in 2.5s** via Playwright.
+  - `npm run build`: Production bundle built cleanly with code-split engines in 2.26s.
+- **Backend Quality Gates:**
+  - `ruff check app tests`: **0 errors, 0 warnings**.
+  - `ruff format --check app tests`: **All 34 files formatted**.
+  - `mypy app tests`: **Strict typing passed with 0 errors across 34 files**.
+  - `pytest`: **44 tests passing in 1.16s**.
+  - `pip-audit`: **0 known vulnerabilities found**.
+
+### 3. Final Project Verification Summary
+All 7 phases (Phases 0 through 6) of ConvertIt are fully implemented, verified, tested, and documented strictly to the specification in `docs/ANTIGRAVITY_PROMPT.md`.

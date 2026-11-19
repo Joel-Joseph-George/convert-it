@@ -6,6 +6,8 @@ dist-ssr/
 .npm/
 .eslintcache
 apps/web/public/vendor/
+test-results/
+playwright-report/
 
 # Python / Backend
 __pycache__/

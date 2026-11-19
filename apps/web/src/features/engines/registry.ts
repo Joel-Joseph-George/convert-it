@@ -1,25 +1,22 @@
 import { BrowserEngine, ConvertContext, ConvertResult, EngineError } from './types';
-import { dataEngine } from './dataEngine';
-import { textEngine } from './textEngine';
-import { imageEngine } from './imageEngine';
-import { heicEngine } from './heicEngine';
-import { pdfEngine, pdfRenderEngine } from './pdfEngine';
-import { ffmpegAudioEngine, ffmpegVideoEngine } from './ffmpegEngine';
 import { ToolDefinition } from '../registry/types';
 
-const ENGINES: Record<string, BrowserEngine> = {
-  'sheetjs-data': dataEngine,
-  'text-engine': textEngine,
-  'image-engine': imageEngine,
-  'heic-engine': heicEngine,
-  'pdf-engine': pdfEngine,
-  'pdf-render': pdfRenderEngine,
-  'ffmpeg-audio': ffmpegAudioEngine,
-  'ffmpeg-video': ffmpegVideoEngine,
+// Dynamic engine loaders for code-splitting (Phase 6 performance pass)
+const ENGINE_LOADERS: Record<string, () => Promise<BrowserEngine>> = {
+  'sheetjs-data': async () => (await import('./dataEngine')).dataEngine,
+  'text-engine': async () => (await import('./textEngine')).textEngine,
+  'image-engine': async () => (await import('./imageEngine')).imageEngine,
+  'heic-engine': async () => (await import('./heicEngine')).heicEngine,
+  'pdf-engine': async () => (await import('./pdfEngine')).pdfEngine,
+  'pdf-render': async () => (await import('./pdfEngine')).pdfRenderEngine,
+  'ffmpeg-audio': async () => (await import('./ffmpegEngine')).ffmpegAudioEngine,
+  'ffmpeg-video': async () => (await import('./ffmpegEngine')).ffmpegVideoEngine,
 };
 
-export function getEngine(id: string): BrowserEngine | undefined {
-  return ENGINES[id];
+export async function getEngine(id: string): Promise<BrowserEngine | undefined> {
+  const loader = ENGINE_LOADERS[id];
+  if (!loader) return undefined;
+  return loader();
 }
 
 export function deduplicateFilenames(results: ConvertResult[]): ConvertResult[] {
@@ -62,8 +59,8 @@ export async function runConversion(
     }
   }
 
-  // 2. Fetch browser engine
-  const engine = getEngine(tool.engine.id);
+  // 2. Fetch browser engine asynchronously
+  const engine = await getEngine(tool.engine.id);
   if (!engine) {
     throw new EngineError(
       'TOOL_DISABLED',
