@@ -10,7 +10,7 @@ export function chunkPages(pages: PageText[], countTokens: (text: string) => num
   const chunks: Chunk[] = [];
   const segmenter = new Intl.Segmenter(undefined, { granularity: 'sentence' });
   for (const { page, text } of pages) {
-    let sentences: string[] = [];
+    const sentences: string[] = [];
     const fits = (value: string) => value.length <= TARGET && countTokens(value) <= MAX_TOKENS;
     function flush(next = '') {
       if (!sentences.length) return;

@@ -6,13 +6,14 @@ const interrupted = () => new ApiClientError({
 });
 
 export async function readAnswer(stream: ReadableStream<Uint8Array>, token: (text: string) => void) {
-  const reader = stream.pipeThrough(new TextDecoderStream()).getReader();
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
   let pending = '';
   try {
     while (true) {
       const { value, done } = await reader.read();
       if (done) throw interrupted();
-      pending += value;
+      pending += decoder.decode(value, { stream: true });
       let separator: RegExpExecArray | null;
       while ((separator = /\r?\n\r?\n/.exec(pending))) {
         const frame = pending.slice(0, separator.index).split(/\r?\n/);

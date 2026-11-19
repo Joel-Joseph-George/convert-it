@@ -19,8 +19,17 @@ export const Route = createFileRoute('/tools/$toolId')({
   component: ToolPage,
 });
 
+const ChatPdfPage = React.lazy(() => import('@/tools/chat-pdf/ChatPdfPage'));
+
 function ToolPage(): React.ReactElement {
   const { toolId } = Route.useParams();
+  if (toolId === 'chat-pdf') {
+    return <React.Suspense fallback={<p role="status">Opening chat…</p>}><ChatPdfPage /></React.Suspense>;
+  }
+  return <ConverterPage toolId={toolId} />;
+}
+
+function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   const tool = getToolById(toolId);
 
   const {

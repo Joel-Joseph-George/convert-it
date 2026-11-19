@@ -4,7 +4,7 @@ import type { PageText } from './chunker';
 GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs';
 
 export async function openPdf(data: ArrayBuffer): Promise<PDFDocumentProxy> {
-  const task = getDocument({ data, isEvalSupported: false, useSystemFonts: true });
+  const task = getDocument({ data, useSystemFonts: true });
   try {
     return await task.promise;
   } catch (error) {

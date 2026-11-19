@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Index } from './embed.worker';
 
-export interface Message { role: 'user' | 'assistant'; content: string }
+export interface Message { role: 'user' | 'assistant'; content: string; pages?: number[] }
 interface ChatState {
   file: File | null;
   status: 'empty' | 'indexing' | 'ready' | 'asking';

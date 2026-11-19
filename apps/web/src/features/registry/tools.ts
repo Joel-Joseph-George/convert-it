@@ -830,9 +830,22 @@ export const TOOLS: ToolDefinition[] = [
     limits: { maxFileSizeMB: 25, maxFiles: 5 },
     notes: 'Works best on PDFs with real tables. Scanned PDFs may need OCR.',
   },
+  {
+    id: 'chat-pdf',
+    name: 'Chat with PDF',
+    description: 'Ask questions about a PDF and open the cited pages.',
+    category: 'documents',
+    keywords: ['pdf', 'chat', 'question', 'search', 'citations'],
+    inputs: { extensions: ['pdf'], mimeTypes: ['application/pdf'], multiple: false },
+    outputs: [{ value: 'answer', label: 'Cited answer' }],
+    options: [],
+    engine: { kind: 'server', id: 'ollama-chat' },
+    limits: { maxFileSizeMB: 25, maxFiles: 1 },
+  },
 ];
 
 export const KNOWN_ENGINE_IDS = new Set([
+  'ollama-chat',
   'image-engine',
   'heic-engine',
   'ffmpeg-audio',
