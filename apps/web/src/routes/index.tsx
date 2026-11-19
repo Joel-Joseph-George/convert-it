@@ -1,36 +1,21 @@
 import * as React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
-import {
-  Link as LinkIcon,
-  ArrowRight,
-  Upload,
-  Zap,
-  ShieldCheck,
-  FileText,
-  FileSpreadsheet,
-  Music,
-  Video,
-  Image as ImageIcon,
-  Minimize2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { ShieldCheck, Upload } from 'lucide-react';
+import { UrlInput } from '@/components/youtube/UrlInput';
+import { PopularToolsStrip } from '@/components/tool/PopularToolsStrip';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
 });
 
-const popularTools = [
-  { id: 'merge-pdf', name: 'Merge PDF', icon: FileText },
-  { id: 'pdf-to-word', name: 'PDF to Word', icon: FileText },
-  { id: 'image-compress', name: 'Compress image', icon: Minimize2 },
-  { id: 'audio-convert', name: 'MP3 to WAV', icon: Music },
-  { id: 'excel-to-csv', name: 'Excel to CSV', icon: FileSpreadsheet },
-  { id: 'video-to-gif', name: 'Video to GIF', icon: Video },
-  { id: 'heic-to-jpg', name: 'HEIC to JPG', icon: ImageIcon },
-  { id: 'images-to-pdf', name: 'Images to PDF', icon: ImageIcon },
-];
-
 function HomePage(): React.ReactElement {
+  const navigate = useNavigate();
+
+  const handleQuickDrop = (e: React.DragEvent): void => {
+    e.preventDefault();
+    navigate({ to: '/tools' });
+  };
+
   return (
     <div className="mx-auto max-w-content space-y-10">
       {/* Hero Section */}
@@ -52,40 +37,16 @@ function HomePage(): React.ReactElement {
         </p>
       </div>
 
-      {/* YouTube Link Ingestion Bar */}
-      <div className="space-y-2">
-        <div className="flex flex-col sm:flex-row items-center gap-2 rounded-card border border-border bg-card p-1.5 shadow-none">
-          <div className="flex flex-1 items-center gap-2 w-full px-3 py-1">
-            <LinkIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input
-              type="url"
-              placeholder="Paste a YouTube link here"
-              className="w-full bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-              readOnly
-            />
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button variant="ghost" size="sm" className="text-xs font-medium text-muted-foreground">
-              Paste
-            </Button>
-            <Button size="sm" className="w-full sm:w-auto text-xs font-medium gap-1">
-              <span>Fetch Media</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Supports youtube.com and youtu.be links
-          </span>
-          <span>For personal use only.</span>
-        </div>
-      </div>
+      {/* YouTube Link Ingestion Bar with validation alert */}
+      <UrlInput />
 
       {/* Quick Dropzone */}
-      <div className="group flex flex-col items-center justify-center rounded-card border border-dashed border-border-dashed bg-card/50 p-8 text-center transition-colors hover:border-primary/50 hover:bg-card">
+      <div
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleQuickDrop}
+        onClick={() => navigate({ to: '/tools' })}
+        className="group flex cursor-pointer flex-col items-center justify-center rounded-card border border-dashed border-border-dashed bg-card/60 p-8 text-center transition-colors hover:border-primary/50 hover:bg-card"
+      >
         <div className="flex h-10 w-10 items-center justify-center rounded-btn bg-primary/10 text-primary">
           <Upload className="h-5 w-5 stroke-[1.75]" />
         </div>
@@ -97,45 +58,8 @@ function HomePage(): React.ReactElement {
         </p>
       </div>
 
-      {/* Popular Tools Strip */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 font-medium text-foreground">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span>Popular tools</span>
-          </div>
-          <span className="text-muted-foreground">Client-side • Instant</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-          {popularTools.map((tool) => {
-            const Icon = tool.icon;
-            return (
-              <Link
-                key={tool.id}
-                to="/tools"
-                className="flex items-center gap-2.5 rounded-card border border-border bg-card p-3 text-left transition-colors hover:bg-muted"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-btn bg-muted text-muted-foreground">
-                  <Icon className="h-3.5 w-3.5 stroke-[1.75]" />
-                </div>
-                <span className="text-xs font-medium text-foreground truncate">
-                  {tool.name}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="flex justify-center pt-2">
-          <Link to="/tools">
-            <Button variant="secondary" size="sm" className="text-xs gap-1.5">
-              <span>Browse all tools</span>
-              <ArrowRight className="h-3 w-3" />
-            </Button>
-          </Link>
-        </div>
-      </div>
+      {/* Popular Tools Strip generated from registry */}
+      <PopularToolsStrip />
 
       {/* Private by Architecture Callout */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-card border border-border bg-card p-4 sm:p-5">

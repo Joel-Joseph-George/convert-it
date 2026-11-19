@@ -50,4 +50,66 @@
 - Live GitHub Actions run in GitHub cloud (repository is currently local; CI workflow file `.github/workflows/ci.yml` is prepared and verified against local tool runs).
 
 ---
-*Ready for Phase 1 review upon user command to continue.*
+
+## Phase 1: Registry and UI (no real conversion yet)
+
+### 1. What was built
+- **Tool Registry Architecture (`features/registry`):**
+  - `types.ts`: Core type abstractions (`Category`, `EngineKind`, `ToolOption`, `ToolDefinition`) strictly conforming to Section 5.
+  - `tools.ts`: Full initial catalogue containing all 27 tools across Image, Audio, Video, Data, PDF, Text, and Server Documents. Enforced `popular: true` on the designated 8 tools.
+  - `validate.ts`: Registry validation engine checking ID uniqueness, category membership, engine ID registration in `KNOWN_ENGINE_IDS`, input/output formats, and limits. Validates at startup and in tests.
+  - `search.ts`: Deterministic client fuzzy/relevance scoring function supporting multi-term queries, exact/prefix name matches, and keyword lookups (e.g., "spreadsheet", "transcode", "png").
+- **Client Queue Store (`features/queue`):**
+  - `queueStore.ts`: Zustand store managing tool-specific file queues with status machine (`ready → converting → done | failed | cancelled`), 20-file batch limit, object URL cleanup, target format selection, tool option state, and fake conversion progress simulation for Phase 1 verification.
+- **Shared UI Component Inventory:**
+  - `EngineBadge.tsx`: Badges tools as "In your browser" (green dot) or "Server" (neutral dot), with optional "Best effort" tag.
+  - `PrivacyLine.tsx`: Renders local browser privacy guarantee (Lock icon) or ephemeral server note (Cloud icon).
+  - `StatusPill.tsx`: 20px status pill with dot indicator (green for complete, amber pulse for converting, red for error, neutral for ready).
+  - `ProgressBar.tsx`: 4px track, linear width transition, solid accent fill turning green upon completion.
+  - `ErrorAlert.tsx` & `errorToView.ts`: Maps all 12+ error codes from Section 10 to calm, actionable inline alert cards (soft red for hard errors, warm amber for limits).
+  - `EmptyState.tsx`: Reusable empty state card with icon, message, and action trigger.
+- **Tool Template & Interaction Components (`components/tool`):**
+  - `FormatPills.tsx`: 32px height format chips (`rounded-chip`), uppercase typography, solid accent selection state.
+  - `OptionsPanel.tsx`: Dynamic form generator rendering selects, sliders, toggles, numbers, and text inputs based on `tool.options`, with collapsible advanced parameters accordion.
+  - `DropZone.tsx`: 1px dashed dropzone target with neutral surface fill, active dragover tint, and "Choose files" button alternative. Supports full-size and compact modes.
+  - `FileRow.tsx`: File queue row showing file type icon, name, formatted file size, target format, progress bar with percentage, download trigger upon completion, and remove/clear action.
+  - `FileQueue.tsx`: Batch queue container with item counter, "Download all (ZIP)", and "Clear all" actions.
+- **Home & Tools Directory Views:**
+  - `UrlInput.tsx`: Link ingestion bar with clipboard paste handling, client URL validation, and inline `ErrorAlert` integration.
+  - `PopularToolsStrip.tsx`: Strip dynamically querying `getPopularTools()` from the registry, linking to `/tools/$toolId`.
+  - `ToolSearch.tsx`: Search input with ⌘K / Ctrl+K keyboard shortcut focus and quick clear.
+  - `CategoryChips.tsx`: Horizontal category selector for instant tool filtering.
+  - `ToolCard.tsx`: Tool grid card with engine badge, format chips, and direct link to tool converter page.
+  - `ToolGrid.tsx`: Responsive 1-col (mobile) to 3-col (desktop) grid with empty state fallback.
+  - `apps/web/src/routes/tools.index.tsx`: `/tools` route with URL query param sync (`?q=&category=`).
+  - `apps/web/src/routes/tools.$toolId.tsx`: Single shared tool page template at `/tools/$toolId` wired to registry, queue store, options panel, format pills, dropzone, and fake progress runner.
+  - 404 handler for unknown tool IDs with "Browse all tools" recovery link.
+
+### 2. What was verified
+- **Visual & Layout Conformance:**
+  - Verified against design screens in `design/` across desktop and 390px mobile viewports in both Light and Dark themes.
+  - Focus rings adhere to 2px accent with 2px offset.
+  - Inter (weights 400, 500, 600 only) and JetBrains Mono rendering locally.
+- **Testing & Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings** across all files.
+  - `npm run type-check`: **0 errors** (`tsc --noEmit`).
+  - `npm run test`: **11 test suites, 40 tests passing** in Vitest:
+    - Registry validation (`registry.test.ts`)
+    - Search scoring & filtering (`search.test.ts`)
+    - Queue store state machine (`queue.test.ts`)
+    - Format pills (`formatPills.test.tsx`)
+    - Options panel (`optionsPanel.test.tsx`)
+    - Dropzone (`dropZone.test.tsx`)
+    - Engine badge (`engineBadge.test.tsx`)
+    - Error alert & error mapping (`errorAlert.test.tsx`)
+    - Button variants (`button.test.tsx`)
+    - Theme toggle (`theme.test.tsx`)
+    - Footer (`footer.test.tsx`)
+  - `npm run build`: Production bundle built successfully (1.07s).
+  - Backend: `ruff check`, `ruff format --check`, `mypy app tests`, and `pytest` **all green with zero errors**.
+
+### 3. What could not be verified
+- Real media transcoding / browser WASM conversions (mock/fake progress used in Phase 1; real WebAssembly engines will be implemented in Phase 2).
+
+---
+*Ready for Phase 2 review upon user command to continue.*
