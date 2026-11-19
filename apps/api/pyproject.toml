@@ -13,6 +13,9 @@ dependencies = [
     "psutil>=6.1.1",
     "filetype>=1.2.0",
     "httpx>=0.28.1",
+    "python-multipart>=0.0.20",
+    "redis>=5.0.0",
+    "yt-dlp>=2025.1.1",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +63,10 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = ["filetype.*", "yt_dlp.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"

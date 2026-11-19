@@ -166,4 +166,84 @@
 
 ---
 
-*Ready for Phase 3 review upon user command to continue.*
+## Phase 3: Backend Core
+
+### 1. What was built
+- **Configuration & Environment (`app/core/config.py`):**
+  - Strongly typed Pydantic Settings reading environment variables and `.env`.
+  - Configurable defaults conforming to Section 8.6 table (`MAX_UPLOAD_MB=25`, `CONCURRENCY_HEAVY=1`, `CONCURRENCY_YOUTUBE=2`, `CONCURRENCY_LIGHT=2`, `MAX_QUEUE_LENGTH=20`, `RATE_LIMIT_PER_MIN=60`, etc.).
+  - Production guard: refuses to start if `ALLOWED_ORIGINS` is empty or contains `*`.
+- **Structured JSON Logging (`app/core/logging.py`):**
+  - Configured `structlog` with JSON renderer in production and development console formatter.
+  - Sanitization processor redacting sensitive keys (`access_code`, `cookie`, `token`, `filename`).
+- **Error Model (`app/core/errors.py`):**
+  - Unified error schema: `{ "error": { "code", "message", "retryable", "retryAfterSec", "details" } }`.
+  - Central error catalogue mapping all 24 standard error codes to HTTP status and retryability.
+  - Custom `AppError` and unhandled exception handler logging server-side and returning `INTERNAL` with a request ID.
+- **Security & Admission Control (`app/core/security.py`, `app/core/admission.py`, `app/core/rate_limit.py`):**
+  - Reverse proxy IP resolution honoring `TRUSTED_PROXY_HOPS`.
+  - Constant-time `X-Access-Code` verification via `secrets.compare_digest`.
+  - Filename sanitization stripping cross-platform path traversal (`/` and `\`), control characters, null bytes, and length bounding.
+  - Magic-byte sniffing via `filetype` library.
+  - Request ID tracking via `RequestContextMiddleware` generating UUID4 `X-Request-Id`.
+  - Rate limiting: sliding window per-IP counter for API requests (default 60/min) and job creations (default 20 / 10 min).
+  - Strict admission control pipeline executing Section 8.3 checks in order:
+    1. Access code (`AUTH_REQUIRED`)
+    2. Per-IP rate limits (`RATE_LIMITED` + `Retry-After`)
+    3. Active jobs per IP cap (`RATE_LIMITED`)
+    4. Global queue capacity (`QUEUE_FULL` + `Retry-After`)
+    5. Temp disk usage check (`SERVER_BUSY`)
+- **Job System & State Management (`app/jobs/`):**
+  - `JobRecord` internal model and `JobSnapshot` public API model with 128-bit unguessable tokens (`secrets.token_urlsafe(16)`).
+  - Storage backends (`store.py`): `MemoryJobStore` (dict + asyncio safety) and `RedisJobStore` (Redis hashes + sliding rate limits, compatible with `fakeredis`).
+  - Queue backends (`queue.py`): `MemoryJobQueue` (asyncio queues) and `RedisJobQueue` (Redis lists) supporting 1-indexed position lookups and pre-execution cancellation.
+  - `JobRunner` (`runner.py`): worker pool managing concurrency per class (`heavy`, `youtube`, `light`), `psutil` memory guard preventing heavy job admission when free RAM < `MIN_FREE_MEM_MB`, external process tree termination (`os.killpg`), monotonic progress throttling (~4 updates/sec), and SSE subscriber event dispatch.
+  - `echo_engine` (`app/engines/echo.py`): fake echo conversion engine exercising the entire upload-to-download lifecycle with staged progress.
+- **Disk & Record Lifecycle (`app/jobs/cleanup.py`):**
+  - Startup temp directory wiper (`wipe_temp_directory`) removing orphan files.
+  - Background periodic task running every 60s to expire result files (15m TTL), age job records (60m TTL), and clean directories 60s after first download.
+  - Graceful shutdown lifespan: reports `draining` status on `/api/health`, drains running jobs up to `SHUTDOWN_GRACE_SEC`, and cleans up resources.
+- **API Endpoints (`app/api/`):**
+  - `GET /api/health`: reports operational state, version, uptime, yt-dlp version, and queue status (`{running, queued}`).
+  - `GET /api/limits`: exposes server quotas, concurrency, and feature flags.
+  - `POST /api/jobs/convert`: streaming multipart upload direct to disk without RAM buffering, validating size limits during stream. Returns `202 {jobId}`.
+  - `GET /api/jobs/{id}`: returns job snapshot.
+  - `GET /api/jobs/{id}/events`: SSE stream with 15s heartbeat comments (`: ping\n\n`) and live status/progress/done/error events.
+  - `DELETE /api/jobs/{id}`: cancels queued or running job, terminates subprocesses, and cleans directory.
+  - `GET /api/jobs/{id}/download`: streams converted file with safe `Content-Disposition`, security headers, and 60s cleanup timer.
+- **Infrastructure & Documentation:**
+  - `apps/api/Dockerfile`: multi-stage Python 3.12-slim build, non-root user (`appuser:10001`), ffmpeg, `/tmp/convertit` tmpfs support, and `/api/health` Docker healthcheck.
+  - `docker-compose.yml`: services for `api` and optional `redis` (under profile `redis`).
+  - `scripts/youtube_smoke_test.py`: standalone diagnostic script extracting live YouTube metadata.
+  - `scripts/bump_ytdlp.sh`: helper script to update yt-dlp.
+  - `docs/API.md`: complete HTTP API documentation conforming to the OpenAPI specification.
+  - `.github/workflows/ci.yml`: added Docker build verification step to backend CI pipeline.
+
+### 2. What was verified
+- **Backend Quality Gates:**
+  - `ruff check app tests`: **0 errors, 0 warnings**.
+  - `ruff format --check app tests`: **All 23 source files formatted**.
+  - `mypy app tests`: **Strict typing passed with 0 errors across 23 source files**.
+  - `pytest`: **23 tests passing in 0.65s**:
+    - `test_health.py`: health status, version, uptime, and queue counts.
+    - `test_security.py`: filename traversal, null bytes, control chars, length caps, magic-byte sniffing, proxy hops, and access code enforcement.
+    - `test_store_and_queue.py`: CRUD, active IP counters, rate limits, and queue position lookups on **both Memory and FakeRedis**.
+    - `test_limits_and_admission.py`: limits schema, active job caps, global queue backpressure, and server draining.
+    - `test_job_lifecycle.py`: full upload-to-download lifecycle with echo engine on **both Memory and FakeRedis**, file size limit enforcement (413), corrupt payload rejection (422), cancellation, and server draining rejection (503).
+- **Docker Verification:**
+  - Built `convertit-api:test` image cleanly from `apps/api/Dockerfile`.
+  - Started container and verified Docker container healthcheck: reports `"Status": "healthy"`, exit code 0, and `/api/health` returning 200 with active yt-dlp version.
+- **YouTube Live Smoke Test:**
+  - Executed `scripts/youtube_smoke_test.py` against live YouTube video ("Me at the zoo"). Successfully extracted metadata, duration (19s), and 24 stream formats using yt-dlp 2026.10.26.
+- **Frontend Quality Gates:**
+  - `npm run lint`: **0 errors, 0 warnings**.
+  - `npm run type-check`: **0 errors**.
+  - `npm run test`: **16 test suites, 54 tests passing**.
+  - `npm run build`: Production bundle builds cleanly in 2.34s.
+
+### 3. What could not be verified
+- Production cloud deployment (target host and domain are not yet decided per Section 16; backend is host-agnostic, single-instance, and fully containerized).
+
+---
+
+*Ready for Phase 4 review upon user command to continue.*

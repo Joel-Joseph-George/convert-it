@@ -75,6 +75,9 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `psutil` | `>=6.1.1` | BSD-3-Clause | Process and system monitoring (RAM guard) |
 | `filetype` | `>=1.2.0` | MIT | File type identification via magic numbers |
 | `httpx` | `>=0.28.1` | BSD-3-Clause | HTTP client for asynchronous requests |
+| `python-multipart` | `>=0.0.20` | Apache-2.0 | Multipart form-data streaming parsing for FastAPI |
+| `redis` | `>=5.0.0` | MIT | Async Redis client for state and queues |
+| `yt-dlp` | `>=2025.1.1` | Unlicense | YouTube metadata extraction and video/audio download |
 
 ### Development Dependencies
 
