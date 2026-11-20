@@ -184,7 +184,7 @@ Streams the completed converted file. Schedules directory deletion 60 seconds af
 
 ### 8. `POST /api/chat`
 
-Streams an answer grounded in page-numbered excerpts. The browser extracts and searches the PDF locally. Send JSON with `Accept: text/event-stream` and the usual access-code header when enabled.
+Streams a Google Gemini answer grounded in page-numbered excerpts. The browser extracts and searches the PDF locally. Send JSON with `Accept: text/event-stream` and the usual access-code header when enabled.
 
 ```json
 {

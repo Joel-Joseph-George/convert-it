@@ -86,7 +86,7 @@ These items depend on final production infrastructure choices (per Section 16 of
   - Surface a small `?` shortcut helper modal displaying navigation shortcuts (`⌘K` for search, `Esc` to clear, `Space` on DropZone).
 
 ### 📄 Document & OCR Enhancements
-- [x] **Chat with PDF.** Search selectable text on-device and stream answers from Ollama with clickable page citations. The browser caches document indexes by file hash. The API admits each stream as a light job.
+- [x] **Chat with PDF.** Search selectable text on-device and stream answers from Gemini with clickable page citations. The browser caches document indexes by file hash. The API admits each stream as a light job.
 - [ ] **Optional Client/Server OCR for Scanned PDFs:**
   - When a PDF fails with `NO_TABLES_FOUND`, offer an optional OCR pass (e.g., Tesseract.js in the browser or server-side OCR) to extract text and tables from image-only scans.
 - [ ] **EPUB & E-Book Converters:**

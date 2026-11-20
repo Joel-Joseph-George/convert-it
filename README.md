@@ -68,7 +68,7 @@ flowchart TD
     end
 
     subgraph External ["External Upstream"]
-        Ollama["Ollama chat completions"]
+        Gemini["Gemini chat completions"]
         YouTube["YouTube Video & Audio Streams"]
     end
 
@@ -80,8 +80,8 @@ flowchart TD
     WorkerPool --> ServerEngines
     YTDLP -. "Canonical HTTPS Only" .-> YouTube
     PDFChat -- "Question, matched text, recent turns" --> FastAPI
-    Admission -- "Light slot" --> Ollama
-    Ollama -- "Answer tokens via FastAPI" --> UI
+    Admission -- "Light slot" --> Gemini
+    Gemini -- "Answer tokens via FastAPI" --> UI
     ServerEngines --> DiskCleaner
 ```
 
@@ -117,7 +117,7 @@ The directory contains **30 tools**, including Chat with PDF. The home page also
 | **Data** | JSON to CSV | JSON array of objects | CSV | In your browser (SheetJS) |
 | **Text** | Markdown to HTML | Markdown (.md) | Clean HTML | In your browser (marked) |
 | **Text** | HTML to Markdown | HTML file | Clean Markdown (.md) | In your browser (turndown) |
-| **Documents** | Chat with PDF | PDF with selectable text | Streamed answer with clickable citations | Browser search, server generation (Ollama) |
+| **Documents** | Chat with PDF | PDF with selectable text | Streamed answer with clickable citations | Browser search, server generation (Gemini) |
 | **Documents** | PDF to Word | PDF document | Word (.docx) | Server (pdf2docx) |
 | **Documents** | PDF to Excel | PDF tables | Excel (.xlsx) | Server (pdfplumber) |
 | **Documents** | Word to PDF | DOCX, DOC | PDF | Server (LibreOffice) |
@@ -143,11 +143,12 @@ npm install
 
 ### 2. Run the Backend API
 
-To enable Chat with PDF, set `OLLAMA_API_KEY` and the following provider settings in `apps/api/.env` before starting the API. The other tools work with the key omitted.
+To enable Chat with PDF, create a Gemini API key in [Google AI Studio](https://aistudio.google.com/apikey) and set it in `apps/api/.env` before starting the API. For free-tier usage, use a project on Google's free plan. The other tools work with the key omitted.
 
 ```dotenv
-OLLAMA_BASE_URL=https://ollama.com/v1
-OLLAMA_MODEL=deepseek-v4.1-flash
+GEMINI_API_KEY=your_key_here
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 
@@ -171,7 +172,7 @@ Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
 Open **Documents → Chat with PDF**, choose a selectable-text PDF up to 25 MB, then ask a question. Click a citation such as `[p. 4]` to view the original page. **Stop** cancels generation.
 
-The first dev start or production build downloads a pinned MiniLM model from Hugging Face. The built site serves the model and WASM files from its own origin. PDF extraction, embedding and retrieval run on the device. IndexedDB retains the excerpts and vectors for reopening a PDF. **Clear stored data** erases all saved PDF indexes and the current conversation. The server forwards the question, up to five matching excerpts and up to six recent messages to Ollama. ConvertIt does not log or persist this content.
+The first dev start or production build downloads a pinned MiniLM model from Hugging Face. The built site serves the model and WASM files from its own origin. PDF extraction, embedding and retrieval run on the device. IndexedDB retains the excerpts and vectors for reopening a PDF. **Clear stored data** erases all saved PDF indexes and the current conversation. The server forwards the question, up to five matching excerpts and up to six recent messages to Gemini. ConvertIt does not log or persist this content. On the free tier, Google may use requests and responses to improve its products. [Gemini API pricing and data use](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite)
 
 ---
 
@@ -181,7 +182,7 @@ The repository includes a production-ready, multi-stage, non-root Dockerfile.
 
 ### Run with Docker Compose (Default In-Memory Queue)
 
-Compose reads `OLLAMA_API_KEY`, `OLLAMA_BASE_URL` and `OLLAMA_MODEL` from the repository-root `.env` or the shell. Copy `.env.example` to `.env` and replace the key placeholder to enable generation. Compose runs the API. Serve the frontend separately with its generated `vendor/` directory.
+Compose reads `GEMINI_API_KEY`, `GEMINI_BASE_URL` and `GEMINI_MODEL` from the repository-root `.env` or the shell. Copy `.env.example` to `.env` and replace the key placeholder to enable generation. Compose runs the API. Serve the frontend separately with its generated `vendor/` directory.
 
 ```bash
 docker compose up --build

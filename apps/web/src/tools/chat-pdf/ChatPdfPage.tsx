@@ -168,9 +168,9 @@ export default function ChatPdfPage() {
         </div>
         <p className="text-sm">Only the relevant excerpts are sent to generate answers.</p>
         <p className="text-sm text-muted-foreground">
-          Your PDF and its search index stay on this device. Ollama receives your question, matching
+          Your PDF and its search index stay on this device. Google Gemini receives your question, matching
           excerpts, and up to six recent messages. The browser loads the embedding model from this
-          site.
+          site. On the free tier, Google may use requests and answers to improve its products.
         </p>
       </header>
       {!file && !clearing && (

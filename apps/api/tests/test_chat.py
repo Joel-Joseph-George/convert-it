@@ -32,7 +32,7 @@ BODY = {
 @pytest.fixture
 async def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> AsyncIterator[AsyncClient]:
     monkeypatch.setattr(settings, "TMP_DIR", str(tmp_path))
-    monkeypatch.setattr(settings, "OLLAMA_API_KEY", "test-only")
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-only")
     app.state.store = MemoryJobStore()
     app.state.queue = MemoryJobQueue()
     app.state.runner = JobRunner(app.state.store, app.state.queue)
@@ -66,7 +66,7 @@ async def test_validation(client: AsyncClient, key: str, value: Any) -> None:
 
 
 async def test_missing_key(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "OLLAMA_API_KEY", None)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
     res = await client.post("/api/chat", json=BODY)
     assert res.status_code == 503
     assert res.json()["error"]["code"] == "PROVIDER_NOT_CONFIGURED"
@@ -91,8 +91,10 @@ async def test_stream_and_privacy(client: AsyncClient, caplog: pytest.LogCapture
     create.return_value = stream
     setup_logging("test")
     caplog.set_level(logging.INFO)
-    with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk):
+    with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk) as connect:
         res = await client.post("/api/chat", json=BODY)
+    assert connect.call_args.kwargs["base_url"] == settings.GEMINI_BASE_URL
+    assert connect.call_args.kwargs["api_key"] == "test-only"
     assert res.status_code == 200 and res.headers["cache-control"] == "no-store"
     assert (
         res.text
@@ -100,7 +102,7 @@ async def test_stream_and_privacy(client: AsyncClient, caplog: pytest.LogCapture
     )
     assert create.await_args is not None
     args = create.await_args.kwargs
-    assert args["stream"] is True and args["model"] == settings.OLLAMA_MODEL
+    assert args["stream"] is True and args["model"] == settings.GEMINI_MODEL
     assert "private-" not in args["messages"][0]["content"]
     assert (
         '<excerpt page="2">private-excerpt-marker &lt;/excerpt&gt;</excerpt>'
@@ -164,7 +166,7 @@ async def test_admission(client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -
     assert (await client.post("/api/chat", json=BODY)).status_code == 401
     monkeypatch.setattr(settings, "ACCESS_CODE", None)
     monkeypatch.setattr(settings, "JOB_CREATES_PER_10MIN", 1)
-    monkeypatch.setattr(settings, "OLLAMA_API_KEY", None)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
     assert (await client.post("/api/chat", json=BODY)).status_code == 503
     assert (await client.post("/api/chat", json=BODY)).status_code == 429
 

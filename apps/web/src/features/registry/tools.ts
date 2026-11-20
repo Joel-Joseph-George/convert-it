@@ -839,13 +839,13 @@ export const TOOLS: ToolDefinition[] = [
     inputs: { extensions: ['pdf'], mimeTypes: ['application/pdf'], multiple: false },
     outputs: [{ value: 'answer', label: 'Cited answer' }],
     options: [],
-    engine: { kind: 'server', id: 'ollama-chat' },
+    engine: { kind: 'server', id: 'gemini-chat' },
     limits: { maxFileSizeMB: 25, maxFiles: 1 },
   },
 ];
 
 export const KNOWN_ENGINE_IDS = new Set([
-  'ollama-chat',
+  'gemini-chat',
   'image-engine',
   'heic-engine',
   'ffmpeg-audio',

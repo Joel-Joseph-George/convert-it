@@ -115,8 +115,8 @@ class ChatStream(Response):
             try:
                 client = await resources.enter_async_context(
                     openai.AsyncOpenAI(
-                        api_key=settings.OLLAMA_API_KEY,
-                        base_url=settings.OLLAMA_BASE_URL,
+                        api_key=settings.GEMINI_API_KEY,
+                        base_url=settings.GEMINI_BASE_URL,
                         http_client=openai.DefaultAsyncHttpxClient(
                             verify=ssl.create_default_context()
                         ),
@@ -126,7 +126,7 @@ class ChatStream(Response):
                 )
                 async with asyncio.timeout_at(deadline):
                     stream = await client.chat.completions.create(
-                        model=settings.OLLAMA_MODEL,
+                        model=settings.GEMINI_MODEL,
                         messages=messages(self.body_data),
                         stream=True,
                     )
@@ -188,10 +188,10 @@ async def chat(body: ChatRequest, request: Request) -> Response:
 async def admit_chat(body: ChatRequest, request: Request) -> Response:
     state = request.app.state
     client_ip = await check_admission(request, state.store, state.queue, state.is_draining)
-    if not settings.OLLAMA_API_KEY or settings.OLLAMA_API_KEY == "your_key_here":
+    if not settings.GEMINI_API_KEY or settings.GEMINI_API_KEY == "your_key_here":
         raise AppError(
             "PROVIDER_NOT_CONFIGURED",
-            "Chat is unavailable. Configure OLLAMA_API_KEY on the server.",
+            "Chat is unavailable. Configure GEMINI_API_KEY on the server.",
         )
     runner: JobRunner = state.runner
     if runner.light_slots.locked():
