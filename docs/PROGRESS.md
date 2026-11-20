@@ -406,7 +406,7 @@ All 7 phases (Phases 0 through 6) of ConvertIt are fully implemented, verified, 
 
 ## Chat with PDF
 
-The Documents catalogue now opens a dedicated chat page. PDF.js reads selectable text and renders cited pages. A browser worker embeds page-local excerpts with quantized MiniLM and caches them in IndexedDB. A normalized dot product selects up to five excerpts with similarity ≥0.25. Follow-up searches include the preceding user question. When no excerpt qualifies, the browser can answer that the information could not be found without contacting the server.
+The Documents catalogue now opens a dedicated chat page. PDF.js reads selectable text and renders cited pages. A browser worker embeds page-local excerpts with quantized MiniLM and caches them in IndexedDB. Search combines embedding similarity with exact query-term matches and selects up to five excerpts. Page references select text from the requested page. Document overviews sample excerpts across the PDF in reading order. Follow-up searches include the preceding user question.
 
 Chunking targets 900 characters with up to 150 characters of complete-sentence overlap. The model tokenizer enforces a 256-token maximum including special tokens. A single sentence beyond that budget or the API's excerpt length limit produces a page-specific error. Password-protected PDFs require an unlocked copy, and scanned PDFs require OCR before indexing.
 

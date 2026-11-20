@@ -113,7 +113,7 @@ export default function ChatPdfPage() {
       );
       control.signal.throwIfAborted();
       if (!(query instanceof Float32Array)) throw new Error('Could not search this PDF.');
-      const chunks = retrieve(current.index, query);
+      const chunks = retrieve(current.index, query, text);
       const pages = chunks.map((chunk) => chunk.page);
       let answer = '';
       const append = (piece: string) => {

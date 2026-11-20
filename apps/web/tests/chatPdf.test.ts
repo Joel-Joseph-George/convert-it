@@ -48,11 +48,17 @@ describe('PDF excerpts', () => {
   it('ranks normalized vectors, caps results and drops weak matches', () => {
     const scores = [-1, 0.24, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
     const index = {
-      chunks: scores.map((_, i) => ({ id: String(i), page: i + 1, text: 'excerpt' })),
+      chunks: scores.map((_, i) => ({
+        id: String(i),
+        page: i + 1,
+        text: 'excerpt',
+      })),
       vectors: scores.map((s) => Float32Array.of(s, Math.sqrt(1 - s * s))),
     };
-    expect(retrieve(index, Float32Array.of(1, 0)).map((c) => c.page)).toEqual([8, 7, 6, 5, 4]);
-    expect(retrieve(index, Float32Array.of(0, -1))).toEqual([]);
+    expect(retrieve(index, Float32Array.of(1, 0), 'What color?').map((c) => c.page)).toEqual([
+      8, 7, 6, 5, 4,
+    ]);
+    expect(retrieve(index, Float32Array.of(0, -1), 'What color?')).toEqual([]);
     const encode = (text: string) => Array.from(text, (char) => char.charCodeAt(0));
     const decode = (ids: number[]) => String.fromCharCode(...ids);
     expect(retrievalQuery('And when?', 'Who opened the library?', encode, decode)).toContain(
@@ -63,6 +69,24 @@ describe('PDF excerpts', () => {
     expect(
       chatPayload('Q', [index.chunks[0] ?? { page: 1, text: '' }], []).chunks[0],
     ).not.toHaveProperty('id');
+  });
+  it('finds evidence for overviews, explicit pages and exact identifiers below the embedding threshold', () => {
+    const index = {
+      chunks: Array.from({ length: 11 }, (_, i) => ({
+        id: String(i),
+        page: i + 1,
+        text: i === 3 ? 'The serial number is KX712.' : 'An excerpt.',
+      })),
+      vectors: Array.from({ length: 11 }, () => Float32Array.of(0, 1)),
+    };
+    const pages = (question: string) =>
+      retrieve(index, Float32Array.of(1, 0), question).map((c) => c.page);
+    expect(pages('Summarize this document')).toEqual([1, 4, 6, 9, 11]);
+    expect(pages('What is this PDF about?')).toEqual([1, 4, 6, 9, 11]);
+    expect(pages('What does page 6 say?')).toEqual([6]);
+    expect(pages('Explain p. 99')).toEqual([]);
+    expect(pages('What is KX712?')).toEqual([4]);
+    expect(pages('Who discovered penicillin?')).toEqual([]);
   });
   it('makes chips only for retrieved pages', () => {
     expect(citationParts('See [p. 4] and [p. 99].', new Set([4]))).toEqual([
