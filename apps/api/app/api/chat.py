@@ -3,6 +3,7 @@
 import asyncio
 import html
 import json
+import ssl
 import time
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
@@ -116,6 +117,9 @@ class ChatStream(Response):
                     openai.AsyncOpenAI(
                         api_key=settings.OLLAMA_API_KEY,
                         base_url=settings.OLLAMA_BASE_URL,
+                        http_client=openai.DefaultAsyncHttpxClient(
+                            verify=ssl.create_default_context()
+                        ),
                         timeout=60.0,
                         max_retries=0,
                     )
