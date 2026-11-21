@@ -32,13 +32,21 @@ export function chunkPages(pages: PageText[], countTokens: (text: string) => num
       if (sentences.length && !fits([...sentences, normalized].join(' '))) flush(normalized);
       for (const { segment } of segmenter.segment(normalized)) {
         const sentence = segment.trim();
-        if (sentence.length > 1500 || countTokens(sentence) > MAX_TOKENS) {
-          throw new Error(
-            `A sentence on page ${page} exceeds the excerpt limit. Try a PDF with shorter sentences.`,
-          );
+        let remaining = sentence;
+        while (remaining) {
+          let part = remaining;
+          if (!fits(part)) {
+            let end = Math.min(part.length, TARGET);
+            while (end > 0 && !fits(part.slice(0, end))) end--;
+            if (!end) throw new Error(`Unable to split text on page ${page} within the token limit.`);
+            const boundary = part.slice(0, end + 1).search(/\s+\S*$/);
+            if (boundary > 0) end = boundary;
+            part = part.slice(0, end).trim();
+          }
+          if (sentences.length && !fits([...sentences, part].join(' '))) flush(part);
+          sentences.push(part);
+          remaining = remaining.slice(part.length).trimStart();
         }
-        if (sentences.length && !fits([...sentences, sentence].join(' '))) flush(sentence);
-        sentences.push(sentence);
       }
     }
     flush();

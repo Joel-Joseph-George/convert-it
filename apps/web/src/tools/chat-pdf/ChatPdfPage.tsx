@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import { EngineBadge } from '@/components/shared/EngineBadge';
+import { ErrorAlert } from '@/components/shared/ErrorAlert';
+import { useServerHealth } from '@/features/server/useServerHealth';
+import { ServerWakeBanner } from '@/features/server/ServerWakeBanner';
 import { DropZone } from '@/components/tool/DropZone';
 import { Button } from '@/components/ui/button';
 import { ask } from './api';
@@ -17,6 +21,8 @@ const failure = (error: unknown) => (error instanceof Error ? error.message : 'P
 const progress = (value: string) => useChat.setState({ progress: value });
 
 export default function ChatPdfPage() {
+  const { isWakingUp, serverError, limits } = useServerHealth();
+  const unavailable = limits?.serverTools?.['chat-pdf'] === false;
   const { file, status, messages, progress: stage } = useChat();
   const session = useRef<DocumentSession | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -153,14 +159,14 @@ export default function ChatPdfPage() {
     }
   }
   return (
-    <div className="mx-auto max-w-content space-y-5">
-      <Link
-        to="/tools"
-        search={{ category: 'documents', q: '' }}
-        className="text-sm text-muted-foreground"
-      >
-        ← Documents
-      </Link>
+    <div className="mx-auto max-w-content space-y-6">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Link to="/tools" search={{ category: 'documents', q: '' }}
+          className="flex items-center gap-1 hover:text-foreground transition-colors">
+          <ArrowLeft className="h-3.5 w-3.5" /><span>Tools</span>
+        </Link>
+        <span>/</span><span className="capitalize text-foreground font-medium">documents</span>
+      </div>
       <header className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-3xl font-semibold">Chat with PDF</h1>
@@ -173,7 +179,10 @@ export default function ChatPdfPage() {
           site. On the free tier, Google may use requests and answers to improve its products.
         </p>
       </header>
-      {!file && !clearing && (
+      {isWakingUp && <ServerWakeBanner />}
+      {serverError && <ErrorAlert error={{ code: 'SERVER_OFFLINE', message: 'The server is currently offline or unreachable.' }} />}
+      {unavailable && <ErrorAlert error={{ code: 'PROVIDER_NOT_CONFIGURED', message: 'Chat is unavailable because the server has no Gemini API key configured.' }} />}
+      {!file && !clearing && !unavailable && (
         <DropZone
           acceptedExtensions={['pdf']}
           maxFileSizeMB={LIMIT_MB}

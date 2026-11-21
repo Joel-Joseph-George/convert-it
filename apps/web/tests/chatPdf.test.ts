@@ -38,7 +38,13 @@ describe('PDF excerpts', () => {
     expect(chunks[0]?.text).toBe(p);
     expect(chunkPages([], tokens)).toEqual([]);
     expect(chunkPages([{ page: 1, text: '   ' }], tokens)).toEqual([]);
-    expect(() => chunkPages([{ page: 3, text: 'Dense sentence.' }], () => 257)).toThrow('page 3');
+    const longSentence = Array.from({ length: 400 }, (_, i) => `word${i}`).join(' ') + '.';
+    const split = chunkPages([{ page: 3, text: longSentence }], tokens);
+    expect(split.length).toBeGreaterThan(1);
+    expect(split.every((c) => c.page === 3 && c.text.length <= 900 && tokens(c.text) <= 256)).toBe(true);
+    for (const word of longSentence.split(' ')) {
+      expect(split.some((c) => c.text.split(' ').includes(word))).toBe(true);
+    }
     const dense = chunkPages(
       [{ page: 1, text: 'One. Two. Three.' }],
       (s) => s.split('. ').length * 100,

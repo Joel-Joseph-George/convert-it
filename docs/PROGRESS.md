@@ -408,7 +408,7 @@ All 7 phases (Phases 0 through 6) of ConvertIt are fully implemented, verified, 
 
 The Documents catalogue now opens a dedicated chat page. PDF.js reads selectable text and renders cited pages. A browser worker embeds page-local excerpts with quantized MiniLM and caches them in IndexedDB. Search combines embedding similarity with exact query-term matches and selects up to five excerpts. Page references select text from the requested page. Document overviews sample excerpts across the PDF in reading order. Follow-up searches include the preceding user question.
 
-Chunking targets 900 characters with up to 150 characters of complete-sentence overlap. The model tokenizer enforces a 256-token maximum including special tokens. A single sentence beyond that budget or the API's excerpt length limit produces a page-specific error. Password-protected PDFs require an unlocked copy, and scanned PDFs require OCR before indexing.
+Chunking targets 900 characters with up to 150 characters of overlap. The model tokenizer enforces a 256-token maximum including special tokens. Long sentences are split at word boundaries, with a character-level fallback for unusually long words. Password-protected PDFs require an unlocked copy, and scanned PDFs require OCR before indexing.
 
 The FastAPI endpoint streams answer text, maps provider errors, and releases the light-job slot and upstream connection on disconnect. Tests cover validation, privacy, SSE framing, retrieval, cache reuse, and opening a cited page. The ten-question fixture exercises the real browser model. A production-browser smoke test exercised FastAPI and the OpenAI SDK against a local streaming provider fixture. Live Gemini generation requires a configured provider key.
 
