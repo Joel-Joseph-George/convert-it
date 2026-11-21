@@ -5,6 +5,8 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  worker: { format: 'es' },
+  optimizeDeps: { include: ['@huggingface/transformers'] },
   plugins: [
     TanStackRouterVite({
       routesDirectory: './src/routes',

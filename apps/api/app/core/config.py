@@ -57,6 +57,10 @@ class Settings(BaseSettings):
     YT_COOKIES_FILE: str | None = None
     YT_PROXY: str | None = None
 
+    GEMINI_API_KEY: str | None = None
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    GEMINI_MODEL: str = "gemini-3.1-flash-lite"
+
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_allowed_origins(cls, value: object) -> list[str]:

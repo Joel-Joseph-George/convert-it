@@ -49,6 +49,10 @@ ERROR_STATUS_MAP: dict[str, tuple[int, bool]] = {
     "JOB_EXPIRED": (410, False),
     "JOB_CANCELLED": (409, False),
     "INTERNAL": (500, True),
+    "PROVIDER_NOT_CONFIGURED": (503, False),
+    "PROVIDER_AUTH_ERROR": (502, False),
+    "PROVIDER_RATE_LIMITED": (429, True),
+    "PROVIDER_TIMEOUT": (504, False),
 }
 
 

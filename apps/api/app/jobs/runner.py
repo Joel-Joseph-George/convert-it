@@ -29,6 +29,7 @@ class JobRunner:
     def __init__(self, store: JobStore, queue: JobQueue) -> None:
         self.store = store
         self.queue = queue
+        self.light_slots = asyncio.Semaphore(settings.CONCURRENCY_LIGHT)
         self._workers: list[asyncio.Task[None]] = []
         self._running = False
         self._active_jobs: dict[str, asyncio.Task[None]] = {}
@@ -208,7 +209,7 @@ class JobRunner:
                         continue
 
                 # Run job execution in dedicated task
-                task = asyncio.create_task(self._execute_job(job_id))
+                task = asyncio.create_task(self._run_in_slot(job_class, job_id))
                 self._active_jobs[job_id] = task
                 try:
                     await task
@@ -220,6 +221,13 @@ class JobRunner:
             except Exception as e:
                 logger.error("worker_loop_error", job_class=job_class, error=str(e))
                 await asyncio.sleep(1.0)
+
+    async def _run_in_slot(self, job_class: JobClass, job_id: str) -> None:
+        if job_class == "light":
+            async with self.light_slots:
+                await self._execute_job(job_id)
+        else:
+            await self._execute_job(job_id)
 
     async def _execute_job(self, job_id: str) -> None:
         """Execute single job lifecycle."""

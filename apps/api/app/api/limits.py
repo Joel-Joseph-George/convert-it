@@ -37,6 +37,7 @@ async def get_limits() -> LimitsResponse:
         "word-to-pdf": has_lo,
         "excel-to-pdf": has_lo,
         "powerpoint-to-pdf": has_lo,
+        "chat-pdf": bool(settings.GEMINI_API_KEY and settings.GEMINI_API_KEY != "your_key_here"),
     }
 
     return LimitsResponse(

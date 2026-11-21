@@ -181,3 +181,45 @@ Streams the completed converted file. Schedules directory deletion 60 seconds af
   - `Cache-Control: no-store`
   - `X-Content-Type-Options: nosniff`
 - Body: Binary stream
+
+### 8. `POST /api/chat`
+
+Streams a Google Gemini answer grounded in page-numbered excerpts. The browser extracts and searches the PDF locally. Send JSON with `Accept: text/event-stream` and the usual access-code header when enabled.
+
+```json
+{
+  "question": "What marks the mountain trail?",
+  "chunks": [{"page": 10, "text": "Blue triangles mark the mountain trail."}],
+  "history": []
+}
+```
+
+| Field | Contract |
+|---|---|
+| `question` | String, 1–2,000 characters |
+| `chunks` | 1–8 objects, each with an integer page ≥1 and 1–1,500 characters of text |
+| `history` | Optional list of up to six messages in chronological order. Each contains a `user` or `assistant` role and up to 4,000 characters of content. |
+
+Unknown fields and invalid types or limits return HTTP 422 with `INVALID_OPTIONS`. The API applies the standard access, job creation, per-IP, and queue limits. Each stream holds one light-job slot until completion or disconnect. Chat payloads and answers stay out of job records and logs.
+
+```text
+event: token
+data: {"token":"Blue triangles "}
+
+event: token
+data: {"token":"[p. 10]"}
+
+event: done
+data: {}
+
+```
+
+The client concatenates token strings. Closing the connection cancels the provider request. A provider failure before streaming returns the JSON error envelope. A failure during streaming ends with an `error` event containing the same envelope. The server sets a 60-second provider I/O timeout and a 90-second overall deadline.
+
+| Condition | HTTP | Error code |
+|---|---|---|
+| Missing provider key | 503 | `PROVIDER_NOT_CONFIGURED` |
+| Provider rejected authentication or access | 502 | `PROVIDER_AUTH_ERROR` |
+| Provider rate limit | 429 | `PROVIDER_RATE_LIMITED`, with a 30-second retry hint |
+| Provider timeout | 504 | `PROVIDER_TIMEOUT` |
+| Other provider failure | 502 | `UPSTREAM_ERROR` |

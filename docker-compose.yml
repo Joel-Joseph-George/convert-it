@@ -11,6 +11,9 @@ services:
     environment:
       - PORT=8000
       - TMP_DIR=/tmp/convertit
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_BASE_URL=${GEMINI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.1-flash-lite}
     tmpfs:
       - /tmp/convertit:size=2G,uid=10001,gid=10001,mode=1777
     restart: unless-stopped
