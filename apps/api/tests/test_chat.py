@@ -148,6 +148,20 @@ async def test_provider_errors(client: AsyncClient, status: int, code: str) -> N
         assert int(res.headers["retry-after"]) == res.json()["error"]["retryAfterSec"]
 
 
+async def test_provider_quota_exhausted_error(client: AsyncClient) -> None:
+    sdk, create = mock_client()
+    req = httpx.Request("POST", "https://provider.invalid")
+    response = httpx.Response(429, request=req)
+    create.side_effect = openai.RateLimitError(
+        "Resource has been exhausted (e.g. check quota)", response=response, body=None
+    )
+    with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk):
+        res = await client.post("/api/chat", json=BODY)
+    assert res.status_code == 429
+    assert res.json()["error"]["code"] == "PROVIDER_QUOTA_EXHAUSTED"
+    assert "retryAfterSec" not in res.headers or res.headers.get("retry-after") is None
+
+
 async def test_midstream_failure(client: AsyncClient) -> None:
     sdk, create = mock_client()
     stream = MagicMock()

@@ -52,6 +52,7 @@ ERROR_STATUS_MAP: dict[str, tuple[int, bool]] = {
     "PROVIDER_NOT_CONFIGURED": (503, False),
     "PROVIDER_AUTH_ERROR": (502, False),
     "PROVIDER_RATE_LIMITED": (429, True),
+    "PROVIDER_QUOTA_EXHAUSTED": (429, False),
     "PROVIDER_TIMEOUT": (504, False),
 }
 

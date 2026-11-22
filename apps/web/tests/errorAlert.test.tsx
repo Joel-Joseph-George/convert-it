@@ -25,6 +25,22 @@ describe('ErrorAlert and errorToView', () => {
     expect(view.message).toContain('Scanned PDFs may need OCR');
   });
 
+  it('maps PROVIDER_QUOTA_EXHAUSTED and PROVIDER_RATE_LIMITED to friendly warnings', () => {
+    const quotaView = errorToView({ code: 'PROVIDER_QUOTA_EXHAUSTED' });
+    expect(quotaView.title).toBe('Gemini Quota Exhausted');
+    expect(quotaView.severity).toBe('warning');
+    expect(quotaView.message).toContain('daily token or request limit');
+
+    const rateView = errorToView({ code: 'PROVIDER_RATE_LIMITED' });
+    expect(rateView.title).toBe('Rate Limit Reached');
+    expect(rateView.severity).toBe('warning');
+    expect(rateView.actionLabel).toBe('Retry');
+
+    const authView = errorToView({ code: 'PROVIDER_AUTH_ERROR' });
+    expect(authView.title).toBe('Invalid Gemini API Key');
+    expect(authView.severity).toBe('error');
+  });
+
   it('renders ErrorAlert with title, description, and triggers action callback', () => {
     const handleAction = vi.fn();
     render(
