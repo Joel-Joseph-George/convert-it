@@ -6,6 +6,8 @@
   "scripts": {
     "copy-vendor": "node scripts/copy-vendor.mjs",
     "postinstall": "npm run copy-vendor",
+    "chat-assets": "node scripts/chat-assets.mjs",
+    "eval:retrieval": "npm run chat-assets && node scripts/retrieval-eval.mjs",
     "prebuild": "npm run copy-vendor",
     "predev": "npm run copy-vendor",
     "dev": "vite",
@@ -21,6 +23,7 @@
     "@ffmpeg/util": "^0.12.2",
     "@fontsource/inter": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
+    "@huggingface/transformers": "^4.3.2",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",

@@ -8,11 +8,14 @@ from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
+from app.api.chat import router as chat_router
 from app.api.health import router as health_router
 from app.api.jobs import router as jobs_router
 from app.api.limits import router as limits_router
@@ -178,6 +181,15 @@ app.add_middleware(
 app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    if request.url.path == "/api/chat":
+        return AppError(
+            "INVALID_OPTIONS", "Invalid chat question, excerpts, or history."
+        ).to_response()
+    return await request_validation_exception_handler(request, exc)
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Catch-all unhandled exception handler logging server-side and returning INTERNAL code."""
@@ -203,3 +215,4 @@ app.include_router(health_router, prefix="/api")
 app.include_router(limits_router, prefix="/api")
 app.include_router(jobs_router, prefix="/api")
 app.include_router(youtube_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")

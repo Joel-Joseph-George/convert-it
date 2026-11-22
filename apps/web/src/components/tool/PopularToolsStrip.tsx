@@ -63,7 +63,7 @@ export const PopularToolsStrip: React.FC<PopularToolsStripProps> = ({
               key={tool.id}
               to="/tools/$toolId"
               params={{ toolId: tool.id }}
-              className="flex items-center gap-2.5 rounded-card border border-border bg-card p-3 text-left transition-colors hover:bg-muted"
+              className="flex items-center gap-2.5 rounded-card border border-border bg-card p-3 text-left transition-[background-color,box-shadow,transform] duration-150 ease-out hover:bg-muted hover:shadow-sm motion-safe:hover:-translate-y-0.5"
             >
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-btn bg-muted text-muted-foreground">
                 <Icon className="h-3.5 w-3.5 stroke-[1.75]" />

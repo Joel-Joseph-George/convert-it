@@ -70,13 +70,11 @@ async def convert_with_libreoffice(
         input_path,
     ]
 
-    preexec_fn = os.setsid if sys.platform != "win32" else None
-
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        preexec_fn=preexec_fn,
+        start_new_session=sys.platform != "win32",
     )
 
     try:

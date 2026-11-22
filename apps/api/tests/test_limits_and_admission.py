@@ -27,6 +27,20 @@ async def test_get_limits_endpoint() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("key", "available"), [(None, False), ("", False), ("your_key_here", False), ("test-key", True)]
+)
+async def test_chat_readiness(
+    monkeypatch: pytest.MonkeyPatch, key: str | None, available: bool
+) -> None:
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", key)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/limits")
+    assert resp.json()["serverTools"]["chat-pdf"] is available
+
+
+@pytest.mark.asyncio
 async def test_admission_control_active_jobs_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     store = MemoryJobStore()
     queue = MemoryJobQueue()

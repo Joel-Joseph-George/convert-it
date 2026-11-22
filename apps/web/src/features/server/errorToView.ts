@@ -109,6 +109,13 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
       };
 
     case 'ERR_HOST_UNREACHABLE':
+    case 'PROVIDER_NOT_CONFIGURED':
+      return {
+        title: 'Chat unavailable',
+        message: 'The server has no Gemini API key configured.',
+        severity: 'warning',
+      };
+
     case 'SERVER_OFFLINE':
       return {
         title: 'The server is not responding',
