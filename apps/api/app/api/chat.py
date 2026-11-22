@@ -77,7 +77,10 @@ def provider_error(exc: Exception) -> AppError:
         )
     if isinstance(exc, openai.RateLimitError):
         msg = str(exc).lower()
-        if any(term in msg for term in ("quota", "exhausted", "credit", "billing", "resource_exhausted")):
+        if any(
+            term in msg
+            for term in ("quota", "exhausted", "credit", "billing", "resource_exhausted")
+        ):
             return AppError(
                 "PROVIDER_QUOTA_EXHAUSTED",
                 "Gemini daily quota or token limit has been exhausted for this key. Check Google AI Studio or update your key.",
@@ -89,7 +92,9 @@ def provider_error(exc: Exception) -> AppError:
             retry_after_sec=30,
         )
     if isinstance(exc, (TimeoutError, openai.APITimeoutError, httpx.TimeoutException)):
-        return AppError("PROVIDER_TIMEOUT", "Gemini timed out while generating the response. Please try again.")
+        return AppError(
+            "PROVIDER_TIMEOUT", "Gemini timed out while generating the response. Please try again."
+        )
     return AppError("UPSTREAM_ERROR", "The chat provider could not complete the answer.")
 
 
