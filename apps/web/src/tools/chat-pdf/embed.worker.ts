@@ -17,7 +17,7 @@ async function loadEngine() {
   if (engine) return engine;
   postMessage({ progress: 'Loading local embedding model…' });
   const { env, pipeline } = await import('@huggingface/transformers');
-  env.allowRemoteModels = false;
+  env.allowRemoteModels = true;
   env.allowLocalModels = true;
   env.localModelPath = '/vendor/models/';
   const wasm = env.backends.onnx.wasm;
