@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     JOB_RECORD_TTL_MIN: int = 60
 
     CONCURRENCY_HEAVY: int = 1
-    CONCURRENCY_YOUTUBE: int = 2
+    CONCURRENCY_YOUTUBE: int = 1
     CONCURRENCY_LIGHT: int = 2
 
     MAX_QUEUE_LENGTH: int = 20

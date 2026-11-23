@@ -84,7 +84,7 @@ describe('YouTube UI Components', () => {
   it('renders YouTubeDoneCard with complete status and save button', () => {
     useYouTubeStore.setState({
       status: 'done',
-      currentJobId: 'job_done_999',
+      resultJobId: 'job_done_999',
       result: {
         filename: 'Me_at_the_zoo.mp4',
         sizeBytes: 12450000,

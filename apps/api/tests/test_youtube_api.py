@@ -131,3 +131,29 @@ async def test_youtube_disabled_feature_flag(
         )
         assert job_resp.status_code == 503
         assert job_resp.json()["error"]["code"] == "TOOL_DISABLED"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"mode": "video", "format": "opus"},
+        {"mode": "audio", "format": "mp4"},
+        {"trimStart": "2:00", "trimEnd": "1:00"},
+        {"trimStart": "not-a-time"},
+        {"quality": 99999},
+    ],
+)
+async def test_youtube_create_job_rejects_bad_options(
+    test_app: FastAPI, overrides: dict[str, Any]
+) -> None:
+    transport = ASGITransport(app=test_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        payload: dict[str, Any] = {
+            "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+            "mode": "video",
+            "format": "mp4",
+            **overrides,
+        }
+        resp = await client.post("/api/jobs/youtube", json=payload)
+        assert resp.status_code == 422

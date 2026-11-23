@@ -1,21 +1,51 @@
 """yt-dlp exception message mapping to standardized AppError shapes according to Section 10.3."""
 
+import re
+
 from app.core.errors import AppError
+from app.core.logging import logger
+
+# YouTube's own messages use typographic quotes ("you’re"), so normalise them before matching.
+_QUOTE_TRANSLATION = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
+_VIDEO_ID_PATTERN = re.compile(r"\[youtube[^\]]*\]\s*[A-Za-z0-9_-]{11}")
+_URL_PATTERN = re.compile(r"https?://\S+")
 
 
-def map_ytdlp_error(exc: Exception) -> AppError:
+def redact_ytdlp_message(message: str, max_length: int = 500) -> str:
+    """Strip video IDs and URLs from a yt-dlp message so it can be logged safely."""
+    redacted = _VIDEO_ID_PATTERN.sub("[youtube] <id>", message)
+    redacted = _URL_PATTERN.sub("<url>", redacted)
+    return redacted[:max_length]
+
+
+def map_ytdlp_error(exc: Exception, *, stage: str = "unknown") -> AppError:
     """Map any yt-dlp exception or error message to a clean, user-safe AppError."""
-    err_str = str(exc).lower()
+    raw = str(exc)
+    err_str = raw.translate(_QUOTE_TRANSLATION).lower()
+    app_error = _classify(err_str)
+    # Log the underlying reason; without it every upstream failure looks the same.
+    logger.warn(
+        "ytdlp_error",
+        stage=stage,
+        mapped_code=app_error.code,
+        error_type=type(exc).__name__,
+        detail=redact_ytdlp_message(raw),
+    )
+    return app_error
+
+
+def _classify(err_str: str) -> AppError:
 
     # 1. Bot check / Sign-in required
     if any(
         term in err_str
         for term in (
-            "sign in to confirm you're not a bot",
-            "confirm you're not a bot",
+            "not a bot",
             "bot detection",
             "automated queries",
-            "sign in to confirm your age",
+            "po token",
+            "http error 429",
+            "too many requests",
         )
     ):
         return AppError(
@@ -29,7 +59,12 @@ def map_ytdlp_error(exc: Exception) -> AppError:
     # 2. Age-restricted videos
     if any(
         term in err_str
-        for term in ("age-restricted", "age restricted", "inappropriate for some users")
+        for term in (
+            "age-restricted",
+            "age restricted",
+            "confirm your age",
+            "inappropriate for some users",
+        )
     ):
         return AppError(
             code="AGE_RESTRICTED",
@@ -54,6 +89,8 @@ def map_ytdlp_error(exc: Exception) -> AppError:
             "private video",
             "video is private",
             "video unavailable",
+            "video is unavailable",
+            "video is no longer available",
             "this video has been removed",
             "account has been terminated",
             "not available in your country",
@@ -83,6 +120,14 @@ def map_ytdlp_error(exc: Exception) -> AppError:
             message="The requested format exceeds the server maximum download size.",
             status_code=413,
             retryable=False,
+        )
+
+    if "requested format is not available" in err_str or "no video formats found" in err_str:
+        return AppError(
+            code="FORMAT_UNAVAILABLE",
+            message="YouTube didn't offer a stream in the requested quality or format. Try another option.",
+            status_code=422,
+            retryable=True,
         )
 
     # 6. Network connectivity or upstream timeouts

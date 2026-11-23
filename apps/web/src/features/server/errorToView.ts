@@ -11,7 +11,7 @@ export interface ErrorViewModel {
   message: string;
   severity: 'error' | 'warning';
   actionLabel?: string;
-  actionKind?: 'clear' | 'retry' | 'audio-only' | 'try-another';
+  actionKind?: 'clear' | 'retry' | 'audio-only' | 'try-another' | 'options';
 }
 
 export function errorToView(error: AppError | Error | string): ErrorViewModel {
@@ -142,6 +142,70 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
         severity: 'error',
         actionLabel: 'Retry',
         actionKind: 'retry',
+      };
+
+    case 'UNSUPPORTED_URL':
+      return {
+        title: 'That link isn\'t supported',
+        message: defaultMsg || 'Paste a link to a single YouTube video.',
+        severity: 'error',
+        actionLabel: 'Clear',
+        actionKind: 'clear',
+      };
+
+    case 'INVALID_OPTIONS':
+      return {
+        title: 'Check your options',
+        message: defaultMsg || 'One of the selected options is invalid.',
+        severity: 'warning',
+        actionLabel: 'Change options',
+        actionKind: 'options',
+      };
+
+    case 'FORMAT_UNAVAILABLE':
+      return {
+        title: 'That quality or format isn\'t available',
+        message: defaultMsg || 'Pick a different quality or format and try again.',
+        severity: 'warning',
+        actionLabel: 'Change options',
+        actionKind: 'options',
+      };
+
+    case 'NETWORK_ERROR':
+      return {
+        title: "Couldn't reach the server",
+        message: defaultMsg || 'It may be waking up from sleep. Try again in a moment.',
+        severity: 'error',
+        actionLabel: 'Retry',
+        actionKind: 'retry',
+      };
+
+    case 'JOB_NOT_FOUND':
+    case 'JOB_EXPIRED':
+      return {
+        title: 'This job is no longer available',
+        message: defaultMsg || 'The server may have restarted. Please try again.',
+        severity: 'warning',
+        actionLabel: 'Retry',
+        actionKind: 'retry',
+      };
+
+    case 'RATE_LIMITED':
+    case 'QUEUE_FULL':
+    case 'SERVER_BUSY':
+      return {
+        title: 'The server is busy',
+        message: defaultMsg || 'Please wait a moment and try again.',
+        severity: 'warning',
+        actionLabel: 'Retry',
+        actionKind: 'retry',
+      };
+
+    case 'AUTH_REQUIRED':
+      return {
+        title: 'Access code required',
+        message: defaultMsg || 'This server requires an access code for server tools.',
+        severity: 'error',
       };
 
     case 'CONVERSION_FAILED':

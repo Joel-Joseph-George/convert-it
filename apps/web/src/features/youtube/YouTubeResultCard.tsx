@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronUp, Download, Music, Video, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormatPills } from '@/components/tool/FormatPills';
-import { useYouTubeStore } from './youtubeStore';
+import { getBitrateOptions, useYouTubeStore } from './youtubeStore';
 
 export const YouTubeResultCard: React.FC = () => {
   const {
@@ -46,12 +46,10 @@ export const YouTubeResultCard: React.FC = () => {
     { value: 'WAV', label: 'WAV' },
     { value: 'OPUS', label: 'OPUS' },
   ];
-  const audioBitrateOutputs = [
-    { value: '128k', label: '128k' },
-    { value: '192k', label: '192k' },
-    { value: '256k', label: '256k' },
-    { value: '320k', label: '320k' },
-  ];
+  const audioBitrateOutputs = getBitrateOptions(info, selectedFormat).map((b) => ({
+    value: `${b}k`,
+    label: `${b}k`,
+  }));
 
   return (
     <div className="w-full bg-surface border border-border rounded-card p-5 sm:p-6 mb-8 shadow-sm">
@@ -160,7 +158,7 @@ export const YouTubeResultCard: React.FC = () => {
             onSelectFormat={(val: string) => setFormat(val.toLowerCase())}
           />
 
-          {selectedFormat !== 'wav' && (
+          {audioBitrateOutputs.length > 0 && (
             <FormatPills
               label="Bitrate"
               outputs={audioBitrateOutputs}

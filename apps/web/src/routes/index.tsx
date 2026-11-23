@@ -19,7 +19,27 @@ export const Route = createFileRoute('/')({
 function HomePage(): React.ReactElement {
   const navigate = useNavigate();
   const { isWakingUp, serverError, limits } = useServerHealth();
-  const { status, error, fetchInfo, reset } = useYouTubeStore();
+  const status = useYouTubeStore((s) => s.status);
+  const error = useYouTubeStore((s) => s.error);
+  const url = useYouTubeStore((s) => s.url);
+  const setUrl = useYouTubeStore((s) => s.setUrl);
+  const fetchInfo = useYouTubeStore((s) => s.fetchInfo);
+  const retry = useYouTubeStore((s) => s.retry);
+  const chooseAudioOnly = useYouTubeStore((s) => s.chooseAudioOnly);
+  const backToOptions = useYouTubeStore((s) => s.backToOptions);
+  const reset = useYouTubeStore((s) => s.reset);
+
+  const handleErrorAction = (actionKind?: string): void => {
+    if (actionKind === 'retry') {
+      void retry();
+    } else if (actionKind === 'audio-only') {
+      chooseAudioOnly();
+    } else if (actionKind === 'options') {
+      backToOptions();
+    } else {
+      reset();
+    }
+  };
 
   const youtubeEnabled = limits ? limits.youtubeEnabled : true;
 
@@ -69,8 +89,10 @@ function HomePage(): React.ReactElement {
       {youtubeEnabled ? (
         <div className="space-y-6">
           <UrlInput
+            value={url}
+            onValueChange={setUrl}
             isLoading={status === 'fetching_info'}
-            onFetch={(url) => fetchInfo(url)}
+            onFetch={(nextUrl) => fetchInfo(nextUrl)}
           />
 
           {status === 'fetching_info' && <YouTubeSkeleton />}
@@ -80,7 +102,7 @@ function HomePage(): React.ReactElement {
             status === 'queued') && <YouTubeProgressCard />}
           {status === 'done' && <YouTubeDoneCard />}
           {status === 'error' && error && (
-            <ErrorAlert error={error} onAction={reset} />
+            <ErrorAlert error={error} onAction={handleErrorAction} />
           )}
         </div>
       ) : (

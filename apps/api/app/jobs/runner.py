@@ -15,6 +15,8 @@ import psutil
 from app.core.config import settings
 from app.core.errors import AppError, ErrorDetail
 from app.core.logging import logger
+from app.jobs.cancellation import discard as discard_cancel_flag
+from app.jobs.cancellation import request_cancel
 from app.jobs.models import JobClass, JobRecord
 from app.jobs.queue import JobQueue
 from app.jobs.store import JobStore
@@ -135,6 +137,10 @@ class JobRunner:
         job = await self.store.get_job(job_id)
         if not job:
             return False
+
+        if job.status in ("queued", "running"):
+            # Tell any engine thread for this job to stop at its next checkpoint
+            request_cancel(job_id)
 
         if job.status == "queued":
             # Remove from queue
@@ -287,10 +293,17 @@ class JobRunner:
             return
 
         try:
-            result = await asyncio.wait_for(
-                engine(job, update_progress),
-                timeout=timeout_sec,
-            )
+            try:
+                result = await asyncio.wait_for(
+                    engine(job, update_progress),
+                    timeout=timeout_sec,
+                )
+            except BaseException:
+                # Timeouts and cancellations only stop the awaiting coroutine; worker
+                # threads (e.g. yt-dlp) keep going unless they are told to stop.
+                request_cancel(job_id)
+                raise
+            discard_cancel_flag(job_id)
             job.status = "succeeded"
             job.progress = 100
             job.stage = None
