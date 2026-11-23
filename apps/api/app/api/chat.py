@@ -6,7 +6,7 @@ import json
 import ssl
 import time
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, suppress
 from typing import Literal
 from uuid import uuid4
 
@@ -86,10 +86,22 @@ def provider_error(exc: Exception) -> AppError:
                 "Gemini daily quota or token limit has been exhausted for this key. Check Google AI Studio or update your key.",
                 retry_after_sec=None,
             )
+        retry_after: int | None = None
+        if hasattr(exc, "response") and exc.response is not None:
+            header_val = exc.response.headers.get("retry-after")
+            if header_val:
+                with suppress(ValueError, TypeError):
+                    retry_after = int(header_val)
+        retry_sec = retry_after if retry_after is not None else 30
+        msg_text = (
+            f"Rate limit reached. Please wait {retry_sec} seconds before trying again."
+            if retry_after is not None
+            else "Rate limit reached. Please wait a moment before trying again."
+        )
         return AppError(
             "PROVIDER_RATE_LIMITED",
-            "Gemini free-tier request limit (15 requests/minute) exceeded. Please wait a moment before trying again.",
-            retry_after_sec=30,
+            msg_text,
+            retry_after_sec=retry_sec,
         )
     if isinstance(exc, (TimeoutError, openai.APITimeoutError, httpx.TimeoutException)):
         return AppError(

@@ -133,8 +133,8 @@ export default function ChatPdfPage() {
     }
   }
 
-  async function submit(e: FormEvent, retryText?: string) {
-    e.preventDefault();
+  async function submit(e?: FormEvent, retryText?: string) {
+    e?.preventDefault();
     const current = session.current;
     const text = (retryText ?? question).trim();
     if (
@@ -247,9 +247,9 @@ export default function ChatPdfPage() {
         <p className="text-sm text-muted-foreground">
           Your PDF and its search index stay on this device. Google Gemini
           receives your question, matching excerpts, and up to six recent
-          messages. The browser loads the embedding model from this site. On the
-          free tier, Google may use requests and answers to improve its
-          products.
+          messages. The browser loads the embedding model from this site, with
+          a fallback to the public Hugging Face model CDN if needed. On the free
+          tier, Google may use requests and answers to improve its products.
         </p>
       </header>
       {isWakingUp && <ServerWakeBanner />}
@@ -316,8 +316,7 @@ export default function ChatPdfPage() {
           error={apiError}
           onAction={() => {
             if (lastFailedQuestion) {
-              setQuestion(lastFailedQuestion);
-              setApiError(null);
+              void submit(undefined, lastFailedQuestion);
             }
           }}
         />

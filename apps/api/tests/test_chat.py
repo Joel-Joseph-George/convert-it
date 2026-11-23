@@ -162,6 +162,19 @@ async def test_provider_quota_exhausted_error(client: AsyncClient) -> None:
     assert "retryAfterSec" not in res.headers or res.headers.get("retry-after") is None
 
 
+async def test_provider_rate_limit_honors_retry_after_header(client: AsyncClient) -> None:
+    sdk, create = mock_client()
+    req = httpx.Request("POST", "https://provider.invalid")
+    response = httpx.Response(429, request=req, headers={"retry-after": "12"})
+    create.side_effect = openai.RateLimitError("Rate limit reached", response=response, body=None)
+    with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk):
+        res = await client.post("/api/chat", json=BODY)
+    assert res.status_code == 429
+    assert res.headers["retry-after"] == "12"
+    assert res.json()["error"]["retryAfterSec"] == 12
+    assert "12 seconds" in res.json()["error"]["message"]
+
+
 async def test_midstream_failure(client: AsyncClient) -> None:
     sdk, create = mock_client()
     stream = MagicMock()

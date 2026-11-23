@@ -145,7 +145,7 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
         title: "Rate Limit Reached",
         message:
           defaultMsg ||
-          "Gemini free-tier request limit (15 requests/min) was reached. Please wait a moment before asking again.",
+          "AI service rate limit reached. Please wait a moment before asking again.",
         severity: "warning",
         actionLabel: "Retry",
         actionKind: "retry",
