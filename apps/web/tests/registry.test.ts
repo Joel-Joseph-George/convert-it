@@ -32,7 +32,7 @@ describe('Tool Registry Validation', () => {
       'excel-to-csv',
       'video-to-gif',
       'heic-to-jpg',
-      'images-to-pdf',
+      'chat-pdf',
     ];
 
     for (const id of expectedPopular) {

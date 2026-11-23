@@ -6,7 +6,7 @@ import json
 import ssl
 import time
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, suppress
 from typing import Literal
 from uuid import uuid4
 
@@ -71,13 +71,42 @@ def messages(body: ChatRequest) -> list[ChatCompletionMessageParam]:
 
 def provider_error(exc: Exception) -> AppError:
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
-        return AppError("PROVIDER_AUTH_ERROR", "Chat provider authentication failed.")
-    if isinstance(exc, openai.RateLimitError):
         return AppError(
-            "PROVIDER_RATE_LIMITED", "Chat provider is busy. Try again later.", retry_after_sec=30
+            "PROVIDER_AUTH_ERROR",
+            "Gemini API key is invalid or unauthorized. Please verify the key in your server environment settings.",
+        )
+    if isinstance(exc, openai.RateLimitError):
+        msg = str(exc).lower()
+        if any(
+            term in msg
+            for term in ("quota", "exhausted", "credit", "billing", "resource_exhausted")
+        ):
+            return AppError(
+                "PROVIDER_QUOTA_EXHAUSTED",
+                "Gemini daily quota or token limit has been exhausted for this key. Check Google AI Studio or update your key.",
+                retry_after_sec=None,
+            )
+        retry_after: int | None = None
+        if hasattr(exc, "response") and exc.response is not None:
+            header_val = exc.response.headers.get("retry-after")
+            if header_val:
+                with suppress(ValueError, TypeError):
+                    retry_after = int(header_val)
+        retry_sec = retry_after if retry_after is not None else 30
+        msg_text = (
+            f"Rate limit reached. Please wait {retry_sec} seconds before trying again."
+            if retry_after is not None
+            else "Rate limit reached. Please wait a moment before trying again."
+        )
+        return AppError(
+            "PROVIDER_RATE_LIMITED",
+            msg_text,
+            retry_after_sec=retry_sec,
         )
     if isinstance(exc, (TimeoutError, openai.APITimeoutError, httpx.TimeoutException)):
-        return AppError("PROVIDER_TIMEOUT", "Chat provider timed out.")
+        return AppError(
+            "PROVIDER_TIMEOUT", "Gemini timed out while generating the response. Please try again."
+        )
     return AppError("UPSTREAM_ERROR", "The chat provider could not complete the answer.")
 
 

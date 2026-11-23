@@ -603,7 +603,6 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Bundle multiple PNG, JPG, or WEBP photos into a single PDF document.',
     category: 'pdf',
     keywords: ['images', 'pdf', 'photos', 'album', 'scan', 'bundle', 'jpg to pdf', 'png to pdf'],
-    popular: true,
     inputs: {
       extensions: ['png', 'jpg', 'jpeg', 'webp'],
       mimeTypes: ['image/png', 'image/jpeg', 'image/webp'],
@@ -836,6 +835,7 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Ask questions about a PDF and open the cited pages.',
     category: 'documents',
     keywords: ['pdf', 'chat', 'question', 'search', 'citations'],
+    popular: true,
     inputs: { extensions: ['pdf'], mimeTypes: ['application/pdf'], multiple: false },
     outputs: [{ value: 'answer', label: 'Cited answer' }],
     options: [],
