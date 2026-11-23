@@ -56,7 +56,7 @@ flowchart TD
     subgraph Backend ["Ephemeral Backend (apps/api)"]
         FastAPI["FastAPI App (Python 3.12)"]
         Admission["Admission Control & Rate Limiter"]
-        WorkerPool["Job Runner Pool (Heavy:1, YT:2, Light:2)"]
+        WorkerPool["Job Runner Pool (Heavy:1, YT:1, Light:2)"]
         DiskCleaner["60s Ephemeral Cleaner Loop"]
         
         subgraph ServerEngines ["Server Engines"]

@@ -35,6 +35,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
+
+# yt-dlp needs a JavaScript runtime to solve YouTube's player challenges;
+# without one, many formats (or whole videos) are missing.
+COPY --from=denoland/deno:bin-2.5.6 /deno /usr/local/bin/deno
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Create non-root user

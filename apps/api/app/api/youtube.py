@@ -4,13 +4,14 @@ import secrets
 from typing import Literal
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.admission import check_admission
 from app.core.config import settings
 from app.core.errors import AppError
 from app.core.security import verify_access_code
 from app.engines.youtube import extract_video_info
+from app.engines.youtube_options import validate_format, validate_trim
 from app.engines.youtube_url import parse_canonical_youtube_url
 from app.jobs.models import JobRecord
 from app.jobs.queue import JobQueue
@@ -20,7 +21,7 @@ router = APIRouter(tags=["youtube"])
 
 
 class YouTubeInfoRequest(BaseModel):
-    url: str
+    url: str = Field(max_length=2048)
 
 
 class VideoFormatOption(BaseModel):
@@ -52,13 +53,13 @@ class YouTubeInfoResponse(BaseModel):
 
 
 class YouTubeJobRequest(BaseModel):
-    url: str
+    url: str = Field(max_length=2048)
     mode: Literal["video", "audio"] = "video"
-    format: str = "mp4"
-    quality: int | None = None
-    bitrate: int | None = None
-    trimStart: str | None = None
-    trimEnd: str | None = None
+    format: str = Field(default="mp4", max_length=10)
+    quality: int | None = Field(default=None, ge=144, le=4320)
+    bitrate: int | None = Field(default=None, ge=32, le=320)
+    trimStart: str | None = Field(default=None, max_length=16)
+    trimEnd: str | None = Field(default=None, max_length=16)
     embedThumbnail: bool = False
     embedMetadata: bool = False
 
@@ -97,11 +98,13 @@ async def create_youtube_job(request: Request, body: YouTubeJobRequest) -> YouTu
     queue: JobQueue = app_state.queue
     is_draining: bool = getattr(app_state, "is_draining", False)
 
+    # Validate and canonicalize target URL and options before using a job slot
+    canonical_url, video_id = parse_canonical_youtube_url(body.url)
+    target_format = validate_format(body.mode, body.format)
+    validate_trim(body.trimStart, body.trimEnd)
+
     # 1. Admission Control
     client_ip = await check_admission(request, store, queue, is_draining=is_draining)
-
-    # Validate and canonicalize target URL
-    canonical_url, video_id = parse_canonical_youtube_url(body.url)
 
     job_id = secrets.token_urlsafe(16)
 
@@ -115,7 +118,7 @@ async def create_youtube_job(request: Request, body: YouTubeJobRequest) -> YouTu
         options={
             "url": canonical_url,
             "mode": body.mode,
-            "format": body.format,
+            "format": target_format,
             "quality": body.quality,
             "bitrate": body.bitrate,
             "trimStart": body.trimStart,

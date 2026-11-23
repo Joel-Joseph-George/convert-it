@@ -6,7 +6,11 @@ import { apiClient } from '../server/apiClient';
 import { useYouTubeStore } from './youtubeStore';
 
 export const YouTubeDoneCard: React.FC = () => {
-  const { status, result, currentJobId, reset } = useYouTubeStore();
+  const status = useYouTubeStore((s) => s.status);
+  const result = useYouTubeStore((s) => s.result);
+  const resultJobId = useYouTubeStore((s) => s.resultJobId);
+  const reset = useYouTubeStore((s) => s.reset);
+  const setError = useYouTubeStore((s) => s.setError);
 
   if (status !== 'done' || !result) return null;
 
@@ -16,9 +20,16 @@ export const YouTubeDoneCard: React.FC = () => {
       : `${Math.round(result.sizeBytes / 1024)} KB`;
 
   const handleSaveFile = () => {
-    if (currentJobId) {
-      window.location.href = apiClient.getDownloadUrl(currentJobId);
+    if (!resultJobId) return;
+    if (Date.parse(result.expiresAt) <= Date.now()) {
+      setError({
+        code: 'JOB_EXPIRED',
+        message: 'This download has expired. Please convert the video again.',
+      });
+      return;
     }
+    // The server responds with Content-Disposition: attachment, so the page stays put.
+    window.location.href = apiClient.getDownloadUrl(resultJobId);
   };
 
   return (
@@ -43,6 +54,7 @@ export const YouTubeDoneCard: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-center gap-3">
         <Button
           onClick={handleSaveFile}
+          disabled={!resultJobId}
           className="w-full sm:w-auto px-6 h-10 font-sans font-medium flex items-center justify-center gap-2"
         >
           <Download className="w-4 h-4" />

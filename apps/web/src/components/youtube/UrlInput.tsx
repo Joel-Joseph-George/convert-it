@@ -5,17 +5,27 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert';
 import { cn } from '@/lib/utils';
 
 export interface UrlInputProps {
+  /** Controlled value; when omitted the input manages its own state. */
+  value?: string;
+  onValueChange?: (url: string) => void;
   onFetch?: (url: string) => void;
   isLoading?: boolean;
   className?: string;
 }
 
 export const UrlInput: React.FC<UrlInputProps> = ({
+  value,
+  onValueChange,
   onFetch,
   isLoading = false,
   className,
 }) => {
-  const [url, setUrl] = React.useState('');
+  const [localUrl, setLocalUrl] = React.useState('');
+  const url = value ?? localUrl;
+  const setUrl = (next: string): void => {
+    setLocalUrl(next);
+    onValueChange?.(next);
+  };
   const [error, setError] = React.useState<string | null>(null);
 
   const isValidYoutubeUrl = (input: string): boolean => {
@@ -28,7 +38,12 @@ export const UrlInput: React.FC<UrlInputProps> = ({
         'music.youtube.com',
         'youtu.be',
       ];
-      return validHosts.includes(parsed.hostname.toLowerCase());
+      const host = parsed.hostname.toLowerCase();
+      if (!validHosts.includes(host)) return false;
+      // Require something that can identify a video, not just the bare domain.
+      return host === 'youtu.be'
+        ? parsed.pathname.length > 1
+        : parsed.searchParams.has('v') || /^\/(shorts|live)\/./.test(parsed.pathname);
     } catch {
       return false;
     }

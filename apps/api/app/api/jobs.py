@@ -177,15 +177,17 @@ async def stream_job_events(request: Request, job_id: str) -> StreamingResponse:
     store: JobStore = app_state.store
     runner: JobRunner = app_state.runner
 
+    # Subscribe before reading the snapshot so an event fired in between isn't lost
+    # (otherwise a job finishing at that moment leaves the stream waiting forever).
+    event_queue = await runner.subscribe_events(job_id)
     job = await store.get_job(job_id)
     if not job:
+        await runner.unsubscribe_events(job_id, event_queue)
         raise AppError(
             code="JOB_NOT_FOUND",
             message="Job not found.",
             status_code=404,
         )
-
-    event_queue = await runner.subscribe_events(job_id)
 
     async def event_generator() -> AsyncGenerator[str, None]:
         try:

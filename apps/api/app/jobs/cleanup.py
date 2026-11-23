@@ -7,6 +7,7 @@ import time
 
 from app.core.config import settings
 from app.core.logging import logger
+from app.jobs.cancellation import discard as discard_cancel_flag
 from app.jobs.store import JobStore
 
 
@@ -61,6 +62,7 @@ async def run_cleanup_loop(store: JobStore, interval_sec: float = 60.0) -> None:
                     logger.info("expiring_old_job_record", job_id=job.id)
                     shutil.rmtree(job_dir, ignore_errors=True)
                     await store.delete_job(job.id)
+                    discard_cancel_flag(job.id)
 
         except asyncio.CancelledError:
             break

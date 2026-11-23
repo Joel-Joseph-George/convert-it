@@ -30,6 +30,7 @@ ERROR_STATUS_MAP: dict[str, tuple[int, bool]] = {
     "AGE_RESTRICTED": (422, False),
     "LIVE_NOT_SUPPORTED": (422, False),
     "VIDEO_TOO_LONG": (422, False),
+    "FORMAT_UNAVAILABLE": (422, True),
     "FILE_TOO_LARGE": (413, False),
     "UNSUPPORTED_FILE_TYPE": (415, False),
     "FILE_CORRUPT": (422, False),
