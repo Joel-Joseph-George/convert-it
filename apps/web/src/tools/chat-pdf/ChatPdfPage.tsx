@@ -213,7 +213,9 @@ export default function ChatPdfPage() {
     setClearing(true);
     try {
       await clearIndexes();
-      progress("Stored PDF indexes cleared.");
+      // Also drop the cached embedding model, in case a broken download is stored.
+      if (typeof caches !== "undefined") await caches.delete("transformers-cache").catch(() => false);
+      progress("Stored PDF indexes and cached model cleared.");
     } catch {
       setError("Could not clear stored PDF indexes. Try again.");
     } finally {
