@@ -1,18 +1,35 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('ConvertIt E2E Flows (Section 13)', () => {
-  test('1. Home: Paste invalid URL shows ErrorAlert', async ({ page }) => {
+  test('1. Home: Choosing a photo opens the image editor', async ({ page }) => {
     await page.goto('/');
 
-    // Locate YouTube URL input
+    // 1×1 transparent PNG
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+      'base64'
+    );
+    await page.locator('input[aria-label="Choose a photo to edit"]').setInputFiles({
+      name: 'photo.png',
+      mimeType: 'image/png',
+      buffer: png,
+    });
+
+    await expect(page).toHaveURL(/\/tools\/image-editor$/);
+    await expect(page.locator('h1')).toContainText('Image editor');
+    await expect(page.getByText('photo.png', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Download/ })).toBeVisible();
+  });
+
+  test('1b. YouTube tool: Paste invalid URL shows ErrorAlert', async ({ page }) => {
+    await page.goto('/tools/youtube');
+
     const input = page.locator('input[placeholder*="YouTube link"]');
     await expect(input).toBeVisible();
 
-    // Fill with invalid / hostile URL
     await input.fill('https://example.com/not-youtube');
     await input.press('Enter');
 
-    // Verify ErrorAlert appears
     const alert = page.locator('div[role="alert"]');
     await expect(alert).toBeVisible();
     await expect(alert).toContainText("look like a YouTube link");
