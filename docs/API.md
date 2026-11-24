@@ -60,7 +60,7 @@ Public operational health status. Does not touch third-party upstreams or YouTub
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "uptimeSec": 420,
   "ytdlpVersion": "2025.01.26",
   "queue": {

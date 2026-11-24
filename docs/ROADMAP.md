@@ -1,6 +1,6 @@
 # ConvertIt: Project Status & Roadmap
 
-> **Current Version:** `v0.1.0` plus the November 2026 update (Image Editor, Chat with PDF, tool testing round)  
+> **Current Version:** `v0.2.0` (Image Editor, Chat with PDF, tool testing round)  
 > **Repository:** [ConvertIt](https://github.com/Joel-Joseph-George/convert-it.git)  
 > **Status:** Deployed (web on Vercel, API on Render). All 32 tools were tested in November 2026; the bugs found are fixed. The YouTube downloader is kept but is no longer the home page focus, because YouTube blocks hosted servers (#1).
 
@@ -8,7 +8,7 @@
 
 ## 1. What Has Been Completed
 
-### November 2026 update
+### v0.2.0 (November 2026)
 
 - [x] **Image Editor & home page revamp** (#21): the home page now leads with a photo drop target. The editor crops (free and 1:1, 4:5, 3:2, 16:9, 9:16), makes passport photos for six countries with a face guide and 6×4 in print sheet, rotates, flips, resizes, and exports JPG/PNG/WebP to a target KB size. Fully in the browser. Covers most of #18.
 - [x] **YouTube downloader moved to `/tools/youtube`** and listed in All tools, so work on it can continue without blocking the home page.

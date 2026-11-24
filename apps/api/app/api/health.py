@@ -42,7 +42,7 @@ async def get_health(request: Request) -> HealthResponse:
 
     return HealthResponse(
         status="draining" if is_draining else "ok",
-        version="0.1.0",
+        version="0.2.0",
         uptimeSec=max(0, int(time.time() - startup_time)),
         ytdlpVersion=YTDLP_VERSION,
         queue=QueueStatus(running=running_count, queued=queued_count),
