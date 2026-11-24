@@ -5,6 +5,30 @@ export const TOOLS: ToolDefinition[] = [
   // Image Tools (Browser)
   // ==========================================
   {
+    id: 'image-editor',
+    name: 'Image editor',
+    description: 'Crop, resize, rotate and make passport photos in your browser.',
+    category: 'image',
+    keywords: [
+      'edit', 'crop', 'resize', 'rotate', 'flip', 'passport', 'photo', 'visa', 'id',
+      'aspect ratio', 'kb', 'reduce size', 'image', 'picture',
+    ],
+    inputs: {
+      extensions: ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'avif', 'gif', 'bmp'],
+      mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif', 'image/gif', 'image/bmp'],
+      multiple: false,
+      maxFiles: 1,
+    },
+    outputs: [
+      { value: 'jpg', label: 'JPG' },
+      { value: 'png', label: 'PNG' },
+      { value: 'webp', label: 'WEBP' },
+    ],
+    options: [],
+    engine: { kind: 'browser', id: 'image-editor' },
+    limits: { maxFileSizeMB: 50, maxFiles: 1 },
+  },
+  {
     id: 'image-convert',
     name: 'Image Converter',
     description: 'Convert between PNG, JPG, WEBP, and AVIF formats in your browser.',
@@ -267,6 +291,27 @@ export const TOOLS: ToolDefinition[] = [
     ],
     engine: { kind: 'browser', id: 'ffmpeg-video' },
     limits: { maxFileSizeMB: 200, maxFiles: 1 },
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube downloader',
+    description: 'Download a YouTube video, or just its audio, from a link.',
+    category: 'video',
+    keywords: ['youtube', 'yt', 'download', 'video', 'audio', 'mp3', 'mp4', 'link', 'url'],
+    inputs: {
+      extensions: ['url'],
+      mimeTypes: [],
+      multiple: false,
+      maxFiles: 1,
+    },
+    outputs: [
+      { value: 'mp4', label: 'MP4' },
+      { value: 'mp3', label: 'MP3' },
+    ],
+    options: [],
+    engine: { kind: 'server', id: 'yt-dlp' },
+    limits: { maxFileSizeMB: 500, maxFiles: 1 },
+    badge: 'best-effort',
   },
   {
     id: 'video-to-gif',
@@ -846,6 +891,7 @@ export const TOOLS: ToolDefinition[] = [
 
 export const KNOWN_ENGINE_IDS = new Set([
   'gemini-chat',
+  'image-editor',
   'image-engine',
   'heic-engine',
   'ffmpeg-audio',
@@ -857,6 +903,7 @@ export const KNOWN_ENGINE_IDS = new Set([
   'libreoffice',
   'pdf2docx',
   'pdfplumber',
+  'yt-dlp',
 ]);
 
 export function getToolById(id: string): ToolDefinition | undefined {

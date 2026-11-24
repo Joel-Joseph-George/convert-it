@@ -20,11 +20,19 @@ export const Route = createFileRoute('/tools/$toolId')({
 });
 
 const ChatPdfPage = React.lazy(() => import('@/tools/chat-pdf/ChatPdfPage'));
+const ImageEditorPage = React.lazy(() => import('@/tools/image-editor/ImageEditorPage'));
+const YouTubePage = React.lazy(() => import('@/tools/youtube/YouTubePage'));
 
 function ToolPage(): React.ReactElement {
   const { toolId } = Route.useParams();
   if (toolId === 'chat-pdf') {
     return <React.Suspense fallback={<p role="status">Opening chat…</p>}><ChatPdfPage /></React.Suspense>;
+  }
+  if (toolId === 'image-editor') {
+    return <React.Suspense fallback={<p role="status">Opening editor…</p>}><ImageEditorPage /></React.Suspense>;
+  }
+  if (toolId === 'youtube') {
+    return <React.Suspense fallback={<p role="status">Opening downloader…</p>}><YouTubePage /></React.Suspense>;
   }
   return <ConverterPage toolId={toolId} />;
 }
