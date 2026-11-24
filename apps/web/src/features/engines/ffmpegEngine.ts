@@ -1,5 +1,5 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { BrowserEngine, ConvertContext, ConvertResult, EngineError } from './types';
 
 let ffmpegInstance: FFmpeg | null = null;
@@ -20,9 +20,11 @@ async function getFFmpeg(ctx: ConvertContext): Promise<FFmpeg> {
 
   try {
     // Load single-threaded core from local public vendor assets (zero CDN requests)
+    // Blob URLs let the worker import the core in both the Vite dev server and production
+    // (dev refuses to serve /public files as JS modules).
     await ffmpegInstance.load({
-      coreURL: '/vendor/ffmpeg/ffmpeg-core.js',
-      wasmURL: '/vendor/ffmpeg/ffmpeg-core.wasm',
+      coreURL: await toBlobURL('/vendor/ffmpeg/ffmpeg-core.js', 'text/javascript'),
+      wasmURL: await toBlobURL('/vendor/ffmpeg/ffmpeg-core.wasm', 'application/wasm'),
     });
     isLoaded = true;
     return ffmpegInstance;
@@ -30,7 +32,7 @@ async function getFFmpeg(ctx: ConvertContext): Promise<FFmpeg> {
     isLoaded = false;
     throw new EngineError(
       'CONVERSION_FAILED',
-      `Failed to initialize WebAssembly FFmpeg core: ${(err as Error).message}`
+      `Failed to initialize WebAssembly FFmpeg core: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
@@ -182,7 +184,8 @@ export const ffmpegVideoEngine: BrowserEngine = {
         const args = ['-i', inputName];
 
         if (targetFormat === 'gif') {
-          args.push('-vf', `fps=${fps},scale=${scaleWidth}:-1:flags=lanczos`);
+          // Never enlarge: cap at the source width. Height -2 keeps it even.
+          args.push('-vf', `fps=${fps},scale='min(iw,${scaleWidth})':-2:flags=lanczos`);
         } else if (targetFormat === 'mp4') {
           args.push('-c:v', 'libx264', '-crf', crf, '-preset', 'ultrafast', '-c:a', 'aac');
         } else if (targetFormat === 'webm') {

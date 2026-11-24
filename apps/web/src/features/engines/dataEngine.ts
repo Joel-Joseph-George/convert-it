@@ -125,9 +125,22 @@ export const dataEngine: BrowserEngine = {
           });
           mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         } else if (targetFormat === 'json') {
-          const firstSheet = workbook.Sheets[sheetNames[0] || ''];
-          if (!firstSheet) throw new EngineError('FILE_CORRUPT', 'Worksheet is missing.');
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          // "First row is header" off: return rows as plain arrays instead of objects.
+          const rowsOf = (sheet: XLSX.WorkSheet): unknown[] =>
+            options.firstRowHeader === false
+              ? XLSX.utils.sheet_to_json(sheet, { header: 1 })
+              : XLSX.utils.sheet_to_json(sheet);
+          let jsonData: unknown;
+          if (options.sheet === 'all') {
+            // Every sheet, keyed by sheet name.
+            jsonData = Object.fromEntries(
+              sheetNames.map((name) => [name, rowsOf(workbook.Sheets[name] as XLSX.WorkSheet)])
+            );
+          } else {
+            const firstSheet = workbook.Sheets[sheetNames[0] || ''];
+            if (!firstSheet) throw new EngineError('FILE_CORRUPT', 'Worksheet is missing.');
+            jsonData = rowsOf(firstSheet);
+          }
           const jsonText = JSON.stringify(jsonData, null, 2);
           outputBlob = new Blob([jsonText], { type: 'application/json' });
           mime = 'application/json';

@@ -87,4 +87,22 @@ describe('Data Engine', () => {
       dataEngine.run([file], {}, 'csv', { onProgress: () => {} })
     ).rejects.toThrow();
   });
+
+  it('CSV to JSON returns plain rows when the first row is not a header', async () => {
+    const file = new File(['a,b\n1,2'], 't.csv', { type: 'text/csv' });
+    const [res] = await dataEngine.run([file], { firstRowHeader: false }, 'json', { onProgress: () => {} });
+    expect(JSON.parse(await (res?.blob as Blob).text())).toEqual([['a', 'b'], [1, 2]]);
+  });
+
+  it('Excel to JSON can return every sheet keyed by name', async () => {
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['k'], [1]]), 'One');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['k'], [2]]), 'Two');
+    const file = new File([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], 'b.xlsx');
+    const [all] = await dataEngine.run([file], { sheet: 'all' }, 'json', { onProgress: () => {} });
+    expect(JSON.parse(await (all?.blob as Blob).text())).toEqual({ One: [{ k: 1 }], Two: [{ k: 2 }] });
+    const [first] = await dataEngine.run([file], { sheet: 'first' }, 'json', { onProgress: () => {} });
+    expect(JSON.parse(await (first?.blob as Blob).text())).toEqual([{ k: 1 }]);
+  });
 });

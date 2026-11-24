@@ -1,6 +1,7 @@
-"""Server Engine: PDF to Excel (.xlsx) using pdfplumber and openpyxl (Section 11)."""
+"""Server Engine: PDF to Excel (.xlsx) or CSV using pdfplumber and openpyxl (Section 11)."""
 
 import asyncio
+import csv
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -30,10 +31,35 @@ async def convert_pdf_to_excel(
     input_path = job.inputPath
     job_dir = os.path.dirname(input_path)
     base_name, _ = os.path.splitext(sanitize_filename(job.originalFilename or "spreadsheet.pdf"))
-    output_filename = f"{base_name}.xlsx"
+    as_csv = job.options.get("format") == "csv"
+    output_filename = f"{base_name}.{'csv' if as_csv else 'xlsx'}"
     output_path = os.path.join(job_dir, output_filename)
+    # "stream" finds tables laid out with whitespace; "lattice" (default) follows ruling lines.
+    table_settings = (
+        {"vertical_strategy": "text", "horizontal_strategy": "text"}
+        if job.options.get("mode") == "stream"
+        else {}
+    )
 
     await update_progress(10, "converting")
+
+    def _clean(row: list[Any]) -> list[Any]:
+        return [cell.strip() if isinstance(cell, str) else cell for cell in row]
+
+    def _sync_extract_csv() -> bool:
+        found = False
+        with (
+            pdfplumber.open(input_path) as pdf,
+            open(output_path, "w", newline="", encoding="utf-8") as fh,
+        ):
+            writer = csv.writer(fh)
+            for page in pdf.pages:
+                for table in page.extract_tables(table_settings):
+                    if found:
+                        writer.writerow([])  # blank line between tables
+                    writer.writerows(_clean(row) for row in table)
+                    found = True
+        return found
 
     def _sync_extract() -> bool:
         wb = openpyxl.Workbook()
@@ -44,7 +70,7 @@ async def convert_pdf_to_excel(
 
         with pdfplumber.open(input_path) as pdf:
             for page_idx, page in enumerate(pdf.pages, start=1):
-                tables = page.extract_tables()
+                tables = page.extract_tables(table_settings)
                 if not tables:
                     continue
 
@@ -54,10 +80,7 @@ async def convert_pdf_to_excel(
                 for table in tables:
                     for row in table:
                         # Clean cell values
-                        cleaned_row = [
-                            cell.strip() if isinstance(cell, str) else cell for cell in row
-                        ]
-                        ws.append(cleaned_row)
+                        ws.append(_clean(row))
                     # Add blank line between multiple tables on same page
                     ws.append([])
 
@@ -69,7 +92,7 @@ async def convert_pdf_to_excel(
 
     try:
         await update_progress(40, "converting")
-        tables_found = await asyncio.to_thread(_sync_extract)
+        tables_found = await asyncio.to_thread(_sync_extract_csv if as_csv else _sync_extract)
     except Exception as exc:
         raise AppError(
             code="CONVERSION_FAILED",
@@ -101,6 +124,10 @@ async def convert_pdf_to_excel(
     return JobResult(
         filename=output_filename,
         sizeBytes=size_bytes,
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mime=(
+            "text/csv"
+            if as_csv
+            else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
         expiresAt=expires_at,
     )

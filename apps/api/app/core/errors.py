@@ -55,6 +55,9 @@ ERROR_STATUS_MAP: dict[str, tuple[int, bool]] = {
     "PROVIDER_RATE_LIMITED": (429, True),
     "PROVIDER_QUOTA_EXHAUSTED": (429, False),
     "PROVIDER_TIMEOUT": (504, False),
+    "PROVIDER_MODEL_NOT_FOUND": (502, False),
+    "PROVIDER_BAD_REQUEST": (502, False),
+    "PROVIDER_UNAVAILABLE": (502, False),
 }
 
 

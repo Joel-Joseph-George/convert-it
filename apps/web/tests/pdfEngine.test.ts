@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
-import { pdfEngine } from '@/features/engines/pdfEngine';
+import { unzipSync } from 'fflate';
+import { parsePageRange, pdfEngine } from '@/features/engines/pdfEngine';
 
 describe('PDF Engine', () => {
   async function createSamplePdf(pageCount = 1): Promise<Uint8Array> {
@@ -69,5 +70,52 @@ describe('PDF Engine', () => {
     if (!res) return;
     const updatedDoc = await PDFDocument.load(await res.blob.arrayBuffer());
     expect(updatedDoc.getPageCount()).toBe(2);
+  });
+
+  it('parses page ranges in the order given, without duplicates', () => {
+    expect(parsePageRange('all', 3)).toEqual([0, 1, 2]);
+    expect(parsePageRange('3, 1-2, 2', 5)).toEqual([2, 0, 1]);
+    expect(parsePageRange('4-', 5)).toEqual([3, 4]);
+    expect(() => parsePageRange('abc', 5)).toThrow(/not a page number/);
+    expect(() => parsePageRange('9', 5)).toThrow(/No pages/);
+  });
+
+  it('split keeps only the requested pages', async () => {
+    const file = new File([(await createSamplePdf(3)).buffer as ArrayBuffer], 'doc.pdf');
+    const [res] = await pdfEngine.run([file], { pageRange: '2' }, 'pdf', {
+      onProgress: () => {},
+      toolId: 'split-pdf',
+    });
+    expect(res?.filename).toBe('doc_page-2.pdf');
+    const out = await PDFDocument.load(await (res?.blob as Blob).arrayBuffer());
+    expect(out.getPageCount()).toBe(1);
+  });
+
+  it('split "all" returns a ZIP with one PDF per page', async () => {
+    const file = new File([(await createSamplePdf(3)).buffer as ArrayBuffer], 'doc.pdf');
+    const [res] = await pdfEngine.run([file], { pageRange: 'all' }, 'pdf', {
+      onProgress: () => {},
+      toolId: 'split-pdf',
+    });
+    expect(res?.filename).toBe('doc_pages.zip');
+    const entries = unzipSync(new Uint8Array(await (res?.blob as Blob).arrayBuffer()));
+    expect(Object.keys(entries)).toEqual(['doc_page-1.pdf', 'doc_page-2.pdf', 'doc_page-3.pdf']);
+  });
+
+  it('images to PDF fits images on A4 by default and keeps size when asked', async () => {
+    // 1×1 PNG
+    const png = Uint8Array.from(
+      atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='),
+      (c) => c.charCodeAt(0)
+    );
+    const file = new File([png], 'dot.png', { type: 'image/png' });
+    for (const [fit, size] of [['fit', [595, 842]], ['original', [1, 1]]] as const) {
+      const [res] = await pdfEngine.run([file], { fit }, 'pdf', {
+        onProgress: () => {},
+        toolId: 'images-to-pdf',
+      });
+      const page = (await PDFDocument.load(await (res?.blob as Blob).arrayBuffer())).getPage(0);
+      expect([Math.round(page.getWidth()), Math.round(page.getHeight())]).toEqual(size);
+    }
   });
 });

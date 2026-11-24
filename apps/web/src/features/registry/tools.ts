@@ -31,7 +31,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     id: 'image-convert',
     name: 'Image Converter',
-    description: 'Convert between PNG, JPG, WEBP, and AVIF formats in your browser.',
+    description: 'Convert between PNG, JPG and WebP in your browser. AVIF files can be opened too.',
     category: 'image',
     keywords: ['image', 'convert', 'png', 'jpg', 'jpeg', 'webp', 'avif', 'photos', 'picture'],
     inputs: {
@@ -44,7 +44,6 @@ export const TOOLS: ToolDefinition[] = [
       { value: 'webp', label: 'WEBP' },
       { value: 'png', label: 'PNG' },
       { value: 'jpg', label: 'JPG' },
-      { value: 'avif', label: 'AVIF' },
     ],
     options: [
       {
@@ -105,6 +104,8 @@ export const TOOLS: ToolDefinition[] = [
         ],
       },
     ],
+    notes:
+      'PNG is lossless, so PNG files only shrink a little. Pick WebP or JPG for the smallest files. If a result would be bigger than the original, you get the original back.',
     engine: { kind: 'browser', id: 'image-engine' },
     limits: { maxFileSizeMB: 50, maxFiles: 20 },
   },
@@ -514,12 +515,12 @@ export const TOOLS: ToolDefinition[] = [
     options: [
       {
         id: 'sheet',
-        label: 'Sheet selector',
+        label: 'Sheets',
         type: 'select',
-        default: 'all',
+        default: 'first',
         choices: [
-          { value: 'all', label: 'All sheets' },
-          { value: 'first', label: 'First sheet only' },
+          { value: 'first', label: 'First sheet only (list of rows)' },
+          { value: 'all', label: 'All sheets (grouped by sheet name)' },
         ],
       },
     ],
@@ -581,7 +582,7 @@ export const TOOLS: ToolDefinition[] = [
     options: [
       {
         id: 'pageRange',
-        label: 'Page range (e.g. 1-3, 5)',
+        label: 'Pages to keep (e.g. 1-3, 5). "all" = one PDF per page',
         type: 'text',
         default: 'all',
       },

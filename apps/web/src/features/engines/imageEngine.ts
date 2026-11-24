@@ -16,13 +16,50 @@ function getMimeFromFormat(format: string): string {
   }
 }
 
-export async function isFormatSupported(mimeType: string): Promise<boolean> {
-  if (typeof document === 'undefined') return true;
-  const canvas = document.createElement('canvas');
-  canvas.width = 1;
-  canvas.height = 1;
-  const dataUrl = canvas.toDataURL(mimeType);
-  return dataUrl.startsWith(`data:${mimeType}`);
+const COMPRESSION_QUALITY: Record<string, number> = { low: 0.9, balanced: 0.75, high: 0.55 };
+
+interface Decoded {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  close: () => void;
+}
+
+function isSvg(file: File): boolean {
+  return file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
+}
+
+/** SVGs can't go through createImageBitmap, so load them through an <img>. */
+async function decodeSvg(file: File): Promise<Decoded> {
+  const text = await file.text();
+  const url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    let width = img.naturalWidth;
+    let height = img.naturalHeight;
+    if (!width || !height) {
+      // No width/height attributes: fall back to the viewBox, then a sensible default.
+      const vb = text.match(/viewBox\s*=\s*["']\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+      width = vb ? Number(vb[1]) : 512;
+      height = vb ? Number(vb[2]) : 512;
+    }
+    return { source: img, width, height, close: () => URL.revokeObjectURL(url) };
+  } catch {
+    URL.revokeObjectURL(url);
+    throw new EngineError('FILE_CORRUPT', `Could not read SVG ${file.name}.`);
+  }
+}
+
+async function decode(file: File): Promise<Decoded> {
+  if (isSvg(file)) return decodeSvg(file);
+  try {
+    const bitmap = await createImageBitmap(file);
+    return { source: bitmap, width: bitmap.width, height: bitmap.height, close: () => bitmap.close() };
+  } catch {
+    throw new EngineError('FILE_CORRUPT', `Could not decode image ${file.name}.`);
+  }
 }
 
 export const imageEngine: BrowserEngine = {
@@ -36,8 +73,16 @@ export const imageEngine: BrowserEngine = {
     const results: ConvertResult[] = [];
     const total = files.length;
 
+    const compressionLevel =
+      typeof options.compressionLevel === 'string'
+        ? options.compressionLevel
+        : ctx.toolId === 'image-compress'
+          ? 'balanced'
+          : undefined;
     const rawQuality = options.quality ?? 85;
-    const qualityNum = Math.min(100, Math.max(10, Number(rawQuality))) / 100;
+    const qualityNum = compressionLevel
+      ? (COMPRESSION_QUALITY[compressionLevel] ?? COMPRESSION_QUALITY.balanced ?? 0.75)
+      : Math.min(100, Math.max(10, Number(rawQuality))) / 100;
     const resizeWidth = Number(options.resize || 0);
     const scalePercentage = Number(options.percentage || 100);
     const scaleMultiplier = Number(options.scale || 1);
@@ -58,12 +103,7 @@ export const imageEngine: BrowserEngine = {
       const targetMime = getMimeFromFormat(effectiveFormat);
 
       try {
-        let bitmap: ImageBitmap;
-        try {
-          bitmap = await createImageBitmap(file);
-        } catch {
-          throw new EngineError('FILE_CORRUPT', `Could not decode image ${file.name}.`);
-        }
+        const bitmap = await decode(file);
 
         let targetWidth = bitmap.width;
         let targetHeight = bitmap.height;
@@ -94,7 +134,7 @@ export const imageEngine: BrowserEngine = {
             offCtx.fillRect(0, 0, targetWidth, targetHeight);
           }
 
-          offCtx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+          offCtx.drawImage(bitmap.source, 0, 0, targetWidth, targetHeight);
           blob = await offscreen.convertToBlob({
             type: targetMime,
             quality: qualityNum,
@@ -111,7 +151,7 @@ export const imageEngine: BrowserEngine = {
             canvasCtx.fillRect(0, 0, targetWidth, targetHeight);
           }
 
-          canvasCtx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+          canvasCtx.drawImage(bitmap.source, 0, 0, targetWidth, targetHeight);
 
           blob = await new Promise<Blob | null>((resolve) => {
             canvas.toBlob((b) => resolve(b), targetMime, qualityNum);
@@ -125,6 +165,20 @@ export const imageEngine: BrowserEngine = {
             'CONVERSION_FAILED',
             `Browser failed to encode image to ${effectiveFormat.toUpperCase()}.`
           );
+        }
+
+        // Browsers silently fall back to PNG for formats they can't encode (e.g. AVIF).
+        if (blob.type && blob.type !== targetMime) {
+          throw new EngineError(
+            'UNSUPPORTED_FILE_TYPE',
+            `This browser can't create ${effectiveFormat.toUpperCase()} files. Pick another format.`
+          );
+        }
+
+        // Compressing must never make a file bigger: hand back the original instead.
+        const sameFormat = getMimeFromFormat(file.name.split('.').pop() || '') === targetMime;
+        if (compressionLevel && sameFormat && blob.size >= file.size) {
+          blob = file;
         }
 
         results.push({
