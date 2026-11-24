@@ -113,6 +113,9 @@ export const FileRow: React.FC<FileRowProps> = ({
 
         <StatusPill status={item.status} progress={item.progress} />
 
+        {item.status === 'done' && !item.result && (
+          <span className="text-[11px] text-muted-foreground">Included in the file above</span>
+        )}
         {item.status === 'done' && item.result && (
           <Button
             size="sm"

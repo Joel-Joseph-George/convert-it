@@ -250,7 +250,10 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         );
 
         const firstResult = results[0];
-        if (firstResult) {
+        if (!firstResult) {
+          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
+        }
+        {
           const url = URL.createObjectURL(firstResult.blob);
           pending.forEach((item, idx) => {
             get().updateItem(toolId, item.id, {
@@ -297,7 +300,8 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         let res: { filename: string; blob: Blob; sizeBytes: number } | undefined;
 
         if (tool.engine.kind === 'server') {
-          res = await runServerConversion(tool.id, item.file, toolOptions, {
+          // Server engines with more than one output (e.g. PDF → XLSX or CSV) need the choice.
+          res = await runServerConversion(tool.id, item.file, { ...toolOptions, format: item.targetFormat }, {
             onProgress: (prog) => {
               get().updateItem(toolId, item.id, { progress: prog });
             },
@@ -319,7 +323,10 @@ export const useQueueStore = create<QueueState>((set, get) => ({
           res = results[0];
         }
 
-        if (res) {
+        if (!res) {
+          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
+        }
+        {
           const url = URL.createObjectURL(res.blob);
           get().updateItem(toolId, item.id, {
             status: 'done',
