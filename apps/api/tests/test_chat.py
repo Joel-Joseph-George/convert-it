@@ -148,6 +148,33 @@ async def test_provider_errors(client: AsyncClient, status: int, code: str) -> N
         assert int(res.headers["retry-after"]) == res.json()["error"]["retryAfterSec"]
 
 
+@pytest.mark.parametrize(
+    ("status", "message", "code"),
+    [
+        (400, "API key not valid. Please pass a valid API key.", "PROVIDER_AUTH_ERROR"),
+        (400, "User location is not supported for the API use.", "PROVIDER_UNAVAILABLE"),
+        (400, "Request contains an invalid argument.", "PROVIDER_BAD_REQUEST"),
+        (404, "models/x is not found", "PROVIDER_MODEL_NOT_FOUND"),
+    ],
+)
+async def test_provider_bad_request_errors(
+    client: AsyncClient, caplog: pytest.LogCaptureFixture, status: int, message: str, code: str
+) -> None:
+    sdk, create = mock_client()
+    req = httpx.Request("POST", "https://provider.invalid")
+    error_type = openai.NotFoundError if status == 404 else openai.BadRequestError
+    create.side_effect = error_type(
+        message, response=httpx.Response(status, request=req), body=None
+    )
+    with patch("app.api.chat.openai.AsyncOpenAI", return_value=sdk):
+        res = await client.post("/api/chat", json=BODY)
+    assert res.status_code == 502
+    assert res.json()["error"]["code"] == code
+    # The provider's own message is logged for the operator, never sent to the browser.
+    assert message not in res.text
+    assert "chat_provider_error" in caplog.text
+
+
 async def test_provider_quota_exhausted_error(client: AsyncClient) -> None:
     sdk, create = mock_client()
     req = httpx.Request("POST", "https://provider.invalid")

@@ -70,13 +70,43 @@ def messages(body: ChatRequest) -> list[ChatCompletionMessageParam]:
 
 
 def provider_error(exc: Exception) -> AppError:
+    error = _classify_provider_error(exc)
+    # Log what the provider actually said; the user only sees the mapped message.
+    logger.warning(
+        "chat_provider_error",
+        mapped_code=error.code,
+        provider_status=getattr(exc, "status_code", None),
+        provider_error=type(exc).__name__,
+        provider_message=str(exc)[:500],
+        model=settings.GEMINI_MODEL,
+    )
+    return error
+
+
+def _classify_provider_error(exc: Exception) -> AppError:
+    msg = str(exc).lower()
+    # Gemini reports a bad key as 400 INVALID_ARGUMENT rather than 401.
+    if isinstance(exc, openai.BadRequestError) and ("api key" in msg or "api_key" in msg):
+        return AppError(
+            "PROVIDER_AUTH_ERROR",
+            "Gemini API key is invalid or unauthorized. Please verify the key in your server environment settings.",
+        )
+    if isinstance(exc, openai.BadRequestError) and "location" in msg:
+        return AppError(
+            "PROVIDER_UNAVAILABLE",
+            "Gemini is not available from this server's region. Move the server or use a supported region.",
+        )
+    if isinstance(exc, openai.NotFoundError):
+        return AppError(
+            "PROVIDER_MODEL_NOT_FOUND",
+            f'Gemini model "{settings.GEMINI_MODEL}" was not found. Check GEMINI_MODEL on the server.',
+        )
     if isinstance(exc, (openai.AuthenticationError, openai.PermissionDeniedError)):
         return AppError(
             "PROVIDER_AUTH_ERROR",
             "Gemini API key is invalid or unauthorized. Please verify the key in your server environment settings.",
         )
     if isinstance(exc, openai.RateLimitError):
-        msg = str(exc).lower()
         if any(
             term in msg
             for term in ("quota", "exhausted", "credit", "billing", "resource_exhausted")
@@ -106,6 +136,11 @@ def provider_error(exc: Exception) -> AppError:
     if isinstance(exc, (TimeoutError, openai.APITimeoutError, httpx.TimeoutException)):
         return AppError(
             "PROVIDER_TIMEOUT", "Gemini timed out while generating the response. Please try again."
+        )
+    if isinstance(exc, openai.BadRequestError):
+        return AppError(
+            "PROVIDER_BAD_REQUEST",
+            "Gemini rejected the request. The server log has the provider's message.",
         )
     return AppError("UPSTREAM_ERROR", "The chat provider could not complete the answer.")
 

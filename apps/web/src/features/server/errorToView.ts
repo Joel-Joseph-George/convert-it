@@ -130,6 +130,30 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
         severity: "error",
       };
 
+    case "PROVIDER_MODEL_NOT_FOUND":
+      return {
+        title: "Gemini Model Not Found",
+        message:
+          "The server's GEMINI_MODEL setting names a model Google doesn't offer. Update it in server settings.",
+        severity: "error",
+      };
+
+    case "PROVIDER_UNAVAILABLE":
+      return {
+        title: "Gemini Unavailable Here",
+        message: "Google doesn't offer Gemini in the server's region.",
+        severity: "error",
+      };
+
+    case "PROVIDER_BAD_REQUEST":
+      return {
+        title: "Gemini Rejected the Request",
+        message: "Check the server log for Google's message, then the key and project in Google AI Studio.",
+        severity: "error",
+        actionLabel: "Retry",
+        actionKind: "retry",
+      };
+
     case "PROVIDER_QUOTA_EXHAUSTED":
       return {
         title: "Gemini Quota Exhausted",
