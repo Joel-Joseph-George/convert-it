@@ -1,6 +1,7 @@
 """Unit and golden tests for Phase 5 Server Conversion Engines (Section 11)."""
 
 import asyncio
+import csv
 import os
 import shutil
 from collections.abc import AsyncGenerator
@@ -157,6 +158,30 @@ async def test_pdf_to_excel_golden_success(clean_job_env: tuple[str, str]) -> No
 
 
 @pytest.mark.asyncio
+async def test_pdf_to_excel_csv_output(clean_job_env: tuple[str, str]) -> None:
+    """Choosing CSV as the output format writes a CSV instead of a workbook."""
+    _, input_file = clean_job_env
+    job = JobRecord(
+        id="job-pdf-csv",
+        type="convert",
+        toolId="pdf-to-excel",
+        inputPath=input_file,
+        originalFilename="quarterly_data.pdf",
+        options={"format": "csv", "mode": "lattice"},
+    )
+
+    result = await convert_pdf_to_excel(job, AsyncMock())
+
+    assert result.filename == "quarterly_data.csv"
+    assert result.mime == "text/csv"
+    assert job.outputPath is not None
+    with open(job.outputPath, encoding="utf-8") as fh:
+        rows = list(csv.reader(fh))
+    assert rows[0][:2] == ["Header A", "Header B"]
+    assert rows[1][:2] == ["Data 1", "Data 2"]
+
+
+@pytest.mark.asyncio
 async def test_pdf_to_excel_no_tables_rejection(tmp_path: Any) -> None:
     """PDF without tables raises NO_TABLES_FOUND (Section 11)."""
     job_dir = str(tmp_path / "job-plain")
@@ -225,8 +250,8 @@ async def test_libreoffice_mocked_execution(tmp_path: Any) -> None:
         assert "--convert-to" in cmd
         assert "pdf" in cmd
 
-        # Create the fake output PDF
-        with open(expected_pdf, "wb") as f:
+        # Real LibreOffice names the output after the input file ("input.pdf")
+        with open(os.path.join(job_dir, "input.pdf"), "wb") as f:
             f.write(b"%PDF-1.4\n%Fake PDF\n%%EOF")
 
         mock_proc = AsyncMock()

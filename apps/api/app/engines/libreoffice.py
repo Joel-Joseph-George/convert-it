@@ -129,6 +129,11 @@ async def convert_with_libreoffice(
             status_code=500,
         )
 
+    # LibreOffice names its output after the saved upload ("input.pdf"); give it the user's name.
+    if actual_output_path != expected_output_path:
+        os.replace(actual_output_path, expected_output_path)
+        actual_output_path = expected_output_path
+
     final_name = os.path.basename(actual_output_path)
     size_bytes = os.path.getsize(actual_output_path)
     job.outputPath = actual_output_path
