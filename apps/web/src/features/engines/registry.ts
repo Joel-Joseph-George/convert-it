@@ -69,7 +69,7 @@ export async function runConversion(
   }
 
   // 3. Execute conversion
-  const results = await engine.run(files, options, targetFormat, ctx);
+  const results = await engine.run(files, options, targetFormat, { ...ctx, toolId: tool.id });
 
   // 4. Handle filename collision logic per Section 6.3
   return deduplicateFilenames(results);

@@ -1,6 +1,8 @@
 export interface ConvertContext {
   onProgress: (progress: number) => void;
   signal?: AbortSignal;
+  /** Registry id of the tool being run, for engines shared by several tools. */
+  toolId?: string;
 }
 
 export interface ConvertResult {
