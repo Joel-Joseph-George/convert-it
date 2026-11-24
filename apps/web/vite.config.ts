@@ -6,7 +6,11 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 // https://vitejs.dev/config/
 export default defineConfig({
   worker: { format: 'es' },
-  optimizeDeps: { include: ['@huggingface/transformers'] },
+  optimizeDeps: {
+    include: ['@huggingface/transformers'],
+    // Pre-bundling breaks ffmpeg.wasm's worker URL, so load() never resolves in dev.
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+  },
   plugins: [
     TanStackRouterVite({
       routesDirectory: './src/routes',
