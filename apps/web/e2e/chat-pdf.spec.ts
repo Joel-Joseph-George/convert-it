@@ -43,6 +43,6 @@ test('indexes a PDF locally, streams a cited answer, and opens its source', asyn
   await page.locator('input[type=file]').setInputFiles(fixture);
   await expect(input).toBeVisible();
   await page.getByRole('button', { name: 'Clear stored data' }).click();
-  await expect(page.getByRole('status')).toHaveText('Stored PDF indexes cleared.');
+  await expect(page.getByRole('status')).toHaveText('Stored PDF indexes and cached model cleared.');
   expect(externalRequests).toEqual([]);
 });

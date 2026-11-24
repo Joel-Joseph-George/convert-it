@@ -1,12 +1,22 @@
 # ConvertIt: Project Status & Roadmap
 
-> **Current Version:** `v0.1.0` (Initial Release — Phases 0 through 6 Complete)  
+> **Current Version:** `v0.2.0` (Image Editor, Chat with PDF, tool testing round)  
 > **Repository:** [ConvertIt](https://github.com/Joel-Joseph-George/convert-it.git)  
-> **Status:** All core functional requirements, browser/server engines, YouTube module, and test suites are built and verified.
+> **Status:** Deployed (web on Vercel, API on Render). All 32 tools were tested in November 2026; the bugs found are fixed. The YouTube downloader is kept but is no longer the home page focus, because YouTube blocks hosted servers (#1).
 
 ---
 
-## 1. What Has Been Completed (v0.1.0)
+## 1. What Has Been Completed
+
+### v0.2.0 (November 2026)
+
+- [x] **Image Editor & home page revamp** (#21): the home page now leads with a photo drop target. The editor crops (free and 1:1, 4:5, 3:2, 16:9, 9:16), makes passport photos for six countries with a face guide and 6×4 in print sheet, rotates, flips, resizes, and exports JPG/PNG/WebP to a target KB size. Fully in the browser. Covers most of #18.
+- [x] **YouTube downloader moved to `/tools/youtube`** and listed in All tools, so work on it can continue without blocking the home page.
+- [x] **Chat with PDF** (#2, #3): on-device search with a MiniLM embedding worker and IndexedDB cache, Gemini answers with clickable page citations.
+- [x] **Tool testing round & fixes** (#22): automated checks of every tool with generated files, checking actual output contents. Fixed: compression levels ignored and compressed files growing, SVG to PNG failing, AVIF output mislabelled, PDF to images never finishing (#5), split range and image fit ignored, WebP in Images to PDF (#6), CSV/Excel to JSON options ignored, PDF to Excel CSV/mode ignored, LibreOffice outputs named `input.pdf`, GIFs upscaled, ffmpeg.wasm hanging on the dev server, empty conversions spinning forever.
+- [x] **Chat reliability:** Gemini errors are logged with the provider's message and mapped to specific messages (bad key, missing model, region, rejected request). A broken cached embedding model is detected, cleared and re-downloaded automatically, and **Clear stored data** now also clears it.
+
+### v0.1.0 (initial release)
 
 ### 🎨 Design & User Experience
 - [x] **Dual Theme System:** Full Obsidian Utility (Dark) and Utilitarian Precision (Light) themes matching Figma/Stitch specs with instant, non-flickering theme toggling.
@@ -44,27 +54,40 @@
 - [x] **Multi-Stage Dockerfile:** Non-root user (`appuser:10001`), lightweight base, with `ARG INSTALL_LIBREOFFICE=true|false`.
 
 ### 🧪 Verification & Testing
-- [x] **Frontend Unit & Component Tests:** 19 test suites, 69 tests passing in Vitest.
-- [x] **E2E Browser Tests:** 5 Playwright end-to-end flows passing (Invalid URL handling, Search & Filter, Browser Conversion, Theme persistence, Mobile layout).
-- [x] **Backend Integration Tests:** 44 Pytest tests passing (API lifecycle, golden fixtures, memory & Redis queues, SSE events).
+- [x] **Frontend Unit & Component Tests:** 93 Vitest tests (69 at v0.1.0).
+- [x] **E2E Browser Tests:** 7 Playwright flows: home → image editor, YouTube invalid URL, search & filter, browser conversion, theme persistence, mobile layout, Chat with PDF.
+- [x] **Backend Integration Tests:** 105 Pytest tests (44 at v0.1.0), including chat provider error mapping and PDF to Excel CSV.
 - [x] **Security Audits:** 0 known vulnerabilities via `pip-audit`.
 
 ---
 
-## 2. Immediate Next Steps (Deployment & Setup)
+## 2. Immediate Next Steps
 
-These items depend on final production infrastructure choices (per Section 16 of the specification):
+### Open bugs and chores (GitHub issues)
+- [ ] **#1** YouTube downloads blocked on Render (bot check). Needs cookies or a proxy; see `apps/api/README.md`.
+- [ ] **#7** ffmpeg.wasm: progress goes to the wrong file, cancel doesn't stop, duplicate instances.
+- [ ] **#8** Queue: removed items still convert, retry double-converts, ZIP name collisions.
+- [ ] **#9** API: failed upload raises `UnboundLocalError` instead of a clean error.
+- [ ] **#10** Rate limits treat every user as one IP behind Render's proxy (`TRUSTED_PROXY_HOPS`).
+- [ ] **#11** Error buttons do nothing on tool pages; server health never re-checks.
+- [ ] **#13** Access code can't be entered in the UI. **#12** Cache `/vendor` assets on Vercel. **#14** Replace `xlsx@0.18.5`. **#15** Repo hygiene.
 
-- [ ] **Hosting Provider Selection:** Choose hosting destination for the API container (e.g., Fly.io, Railway, Render, Hetzner, or a personal VPS).
-- [ ] **Domain & CORS Configuration:**
-  - Set production domain in `ALLOWED_ORIGINS` (the API strictly refuses to start if `ALLOWED_ORIGINS` contains `*` or is empty in production).
-  - Set `VITE_API_BASE_URL` in frontend production environment.
+### Manual test checklist (not covered by the automated round)
+- [ ] HEIC to JPG with a real iPhone photo.
+- [ ] PowerPoint to PDF with a real `.pptx`.
+- [ ] YouTube downloader on the deployed API.
+- [ ] Chat with PDF end to end on the deployed site, after setting a valid `GEMINI_API_KEY`.
+- [ ] Image editor and converters on Safari (macOS and iOS) and Android Chrome.
+
+### Deployment & setup
+
+- [x] **Hosting Provider Selection:** API on Render, web app on Vercel.
+- [x] **Domain & CORS Configuration:** `ALLOWED_ORIGINS` and `VITE_API_BASE_URL` are set for the Vercel and Render deployments.
 - [ ] **Optional Access Code Configuration:**
   - Set `ACCESS_CODE` in `.env` if lightweight passphrase protection is desired for private personal hosting.
 - [ ] **Candidate Host Smoke Test:**
   - Run `python scripts/youtube_smoke_test.py` on the target server to verify that the host IP is not flagged by YouTube bot detection.
-- [ ] **LibreOffice Host Decision:**
-  - Decide whether the production host has sufficient RAM/disk to run LibreOffice (`INSTALL_LIBREOFFICE=true` requires ~350MB extra disk and at least 512MB RAM).
+- [x] **LibreOffice Host Decision:** enabled on Render; Word and Excel to PDF were verified against the live API.
 
 ---
 
@@ -87,6 +110,8 @@ These items depend on final production infrastructure choices (per Section 16 of
 
 ### 📄 Document & OCR Enhancements
 - [x] **Chat with PDF.** Search selectable text on-device and stream answers from Gemini with clickable page citations. The browser caches document indexes by file hash. The API admits each stream as a light job.
+- [ ] **More image tools (#18):** background removal and an EXIF viewer/stripper. Crop, resize and compress-to-size shipped in the Image Editor.
+- [ ] **More PDF tools (#17):** compress, reorder, OCR, sign.
 - [ ] **Optional Client/Server OCR for Scanned PDFs:**
   - When a PDF fails with `NO_TABLES_FOUND`, offer an optional OCR pass (e.g., Tesseract.js in the browser or server-side OCR) to extract text and tables from image-only scans.
 - [ ] **EPUB & E-Book Converters:**

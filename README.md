@@ -2,7 +2,7 @@
 
 # ConvertIt
 
-**A minimal, ad-free personal web application for downloading YouTube media and converting files between multi-format audio, video, images, documents, spreadsheets, and text.**
+**A minimal, ad-free web app for editing photos, chatting with PDFs and converting files between audio, video, image, PDF, document, spreadsheet and text formats. Most tools run entirely in your browser.**
 
 [![TypeScript Strict](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -14,7 +14,7 @@
 [![Vitest](https://img.shields.io/badge/Vitest-Unit%20Tests-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-Personal%20Use-orange)](#)
 
-[Features](#-key-features) • [Architecture](#-architecture) • [Tools Catalogue](#-supported-tools-catalogue) • [Quickstart](#-quickstart) • [Docker](#-docker-deployment) • [Roadmap](docs/ROADMAP.md)
+[Features](#-key-features) • [Image Editor](#-image-editor) • [Chat with PDF](#-chat-with-pdf) • [Architecture](#-architecture) • [Tools Catalogue](#-supported-tools-catalogue) • [Quickstart](#-quickstart) • [Docker](#-docker-deployment) • [Roadmap](docs/ROADMAP.md)
 
 </div>
 
@@ -22,6 +22,8 @@
 
 ## 🌟 Key Features
 
+- 🖼️ **Image Editor (home page):** Drop a photo to crop, resize, rotate and make passport photos, entirely in your browser. Export to a target file size for upload forms. [More below](#-image-editor).
+- 💬 **Chat with PDF:** Ask questions about a PDF and get streamed answers with clickable page citations. The PDF is searched on your device; only the matching excerpts go to Gemini. [More below](#-chat-with-pdf).
 - 🔒 **Private by Default:** Conversions run locally inside your browser whenever technically feasible via WebAssembly and client-side JavaScript. For those tools, **your files never leave your device**.
 - 🏷️ **Radically Honest:** Every converter is explicitly badged with where execution occurs:
   - `● In your browser` (Green badge) — pure local processing.
@@ -32,6 +34,50 @@
 - ⚡ **Performance Engineered:** Dynamic asynchronous engine loading achieved a **75% reduction** in initial bundle size (from 1.85MB down to 463kB).
 - 🚫 **No Distractions:** Zero ads, zero tracking cookies, no Google Fonts/CDNs, no analytics scripts, and no user accounts.
 - 🎛️ **Dual Theme Support:** Meticulously crafted **Obsidian Utility** (dark) and **Utilitarian Precision** (light) palettes with system preference syncing and `⌘K` command navigation.
+
+---
+
+## 📸 Image Editor
+
+The home page leads with a photo editor (`/tools/image-editor`). Drop a photo on the home page, or pick a shortcut card (Passport photo, Crop, Resize, Reduce to KB), and it opens with that photo loaded. Nothing is uploaded: decoding, cropping and encoding use the browser's canvas.
+
+| Feature | Details |
+|---|---|
+| **Crop** | Drag handles or arrow keys. Presets: Free, 1:1, 4:5, 3:2, 16:9, 9:16. |
+| **Passport photos** | India, US, UK, Schengen/EU, Canada and Australia sizes, with a face-guide oval sized to each country's head-height rule. Output at exact pixel size for 300 DPI. |
+| **Print sheet** | Tiles as many passport copies as fit on a 6×4 in sheet, with cut lines. |
+| **Rotate / flip / resize** | 90° rotation, horizontal and vertical flip, resize by pixels or percentage. |
+| **Export** | JPG, PNG or WebP with a quality slider and a live size estimate. An optional **max file size (KB)** finds the highest quality that fits. |
+| **Input** | JPG, PNG, WebP, AVIF, GIF, BMP and iPhone HEIC. EXIF orientation is applied. |
+
+Passport sizes and head-height ranges are approximate guides. Check the official rules for the document you're applying for.
+
+---
+
+## 💬 Chat with PDF
+
+Open **Documents → Chat with PDF**, choose a PDF with selectable text (up to 25 MB), then ask a question. Answers stream in with citations like `[p. 4]`; click one to open that page. **Stop** cancels generation.
+
+**How it works**
+
+1. **On your device:** PDF.js extracts the text. A browser worker splits it into page-numbered excerpts and embeds them with a quantized MiniLM model, served from this site. Excerpts and vectors are cached in IndexedDB, so reopening the same PDF is instant.
+2. **Search:** each question is matched against the excerpts using embedding similarity plus exact keyword matches. The top five excerpts are selected.
+3. **Answer:** the API forwards only the question, those excerpts and up to six recent messages to Gemini (`gemini-3.1-flash-lite` by default) and streams the answer back. ConvertIt does not log or store this content.
+
+On the free tier, Google may use requests and responses to improve its products. See [Gemini API pricing and data use](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite).
+
+**Troubleshooting**
+
+| Message | What to do |
+|---|---|
+| *Could not run the local embedding model (…)* | The page already retries once with a fresh model download. If it still fails, press **Clear stored data** (it also clears the cached model) and try again. |
+| *Invalid Gemini API Key* | Create a new key in [Google AI Studio](https://aistudio.google.com/apikey) and set `GEMINI_API_KEY` on the server. Gemini reports bad keys as HTTP 400, which the API maps to this message. |
+| *Gemini Model Not Found* | `GEMINI_MODEL` names a model Google doesn't offer. Use a current model ID. |
+| *Gemini Unavailable Here* | Google doesn't serve Gemini from the server's region. |
+| *Gemini Rejected the Request* | The server log line `chat_provider_error` contains Google's exact message. |
+| *Gemini Quota Exhausted* / *Rate Limit Reached* | The key hit its free-tier limit. Wait, or use another key. |
+
+Password-protected PDFs need an unlocked copy. Scanned (image-only) PDFs need OCR first.
 
 ---
 
@@ -48,6 +94,7 @@ flowchart TD
             PDFJS["pdf-lib & pdfjs-dist\n(Merge, Split, Render)"]
             SheetJS["xlsx (SheetJS)\n(CSV ↔ Excel ↔ JSON)"]
             TextImg["marked, turndown, heic2any\n(Markdown, HEIC, Image Canvas)"]
+            Editor["Image Editor\n(Canvas crop, resize, passport, export to KB)"]
             PDFChat["PDF.js → MiniLM worker → IndexedDB → top 5 excerpts"]
             Zip["fflate (Client ZIP Archiving)"]
         end
@@ -89,7 +136,7 @@ flowchart TD
 
 ## 🛠️ Supported Tools Catalogue
 
-The directory contains **30 tools**, including Chat with PDF. The home page also offers the YouTube downloader.
+The directory contains **32 tools**. The home page leads with the Image Editor; the YouTube downloader is listed under Video.
 
 | Category | Tool | Input Format | Output Format | Engine |
 |---|---|---|---|---|
@@ -97,33 +144,34 @@ The directory contains **30 tools**, including Chat with PDF. The home page also
 | **Video** | Video Converter | Video file | MP4, WebM | In your browser (WASM) |
 | **Video** | Video to GIF | Video clip | GIF | In your browser (WASM) |
 | **Video** | Extract Audio | MP4, MOV, AVI, MKV, WEBM | MP3, WAV, AAC, M4A | In your browser (WASM) |
-| **Image** | Image Converter | PNG, JPG, WEBP, AVIF, BMP | PNG, JPG, WEBP | In your browser (Canvas) |
+| **Image** | Image Editor | JPG, PNG, WebP, AVIF, GIF, BMP, HEIC | JPG, PNG, WebP (crop, resize, rotate, passport, target KB) | In your browser (Canvas) |
+| **Image** | Image Converter | PNG, JPG, WEBP, AVIF | PNG, JPG, WEBP | In your browser (Canvas) |
 | **Image** | HEIC to JPG | HEIC, HEIF | JPG, PNG | In your browser (heic2any) |
-| **Image** | Compress Image | PNG, JPG, WEBP | Compressed output | In your browser (Canvas) |
-| **Image** | SVG to PNG | SVG | PNG | In your browser (Canvas) |
+| **Image** | Compress Image | PNG, JPG, WEBP | JPG, WebP, PNG at Low / Balanced / High; never larger than the original | In your browser (Canvas) |
+| **Image** | SVG to PNG | SVG | PNG, WebP (1×, 2×, 4×) | In your browser (Canvas) |
 | **Image** | Resize Image | Image file | Resized image | In your browser (Canvas) |
 | **PDF** | Rotate PDF | PDF | Rotated pages | In your browser (pdf-lib) |
-| **PDF** | Remove PDF Pages | PDF | PDF | In your browser (pdf-lib) |
+| **PDF** | Remove PDF Pages | PDF + page list (e.g. `2, 5-7`) | PDF | In your browser (pdf-lib) |
 | **PDF** | PDF to Text | Selectable PDF text | TXT | In your browser (pdfjs-dist) |
 | **PDF** | Merge PDF | Multiple PDF files | Combined PDF | In your browser (pdf-lib) |
-| **PDF** | Split / Extract PDF | PDF document | Extracted PDF / Page ranges | In your browser (pdf-lib) |
-| **PDF** | PDF to Images | PDF document | PNG, JPEG pages | In your browser (pdfjs-dist) |
-| **PDF** | Images to PDF | Multiple PNG, JPG images | Multi-page PDF | In your browser (pdf-lib) |
-| **Data** | Excel to JSON | Workbook | JSON | In your browser (SheetJS) |
+| **PDF** | Split / Extract PDF | PDF + range (e.g. `1-3, 5, 8-`) | One PDF of those pages, or `all` → one PDF per page (ZIP) | In your browser (pdf-lib) |
+| **PDF** | PDF to Images | PDF document | PNG or JPEG per page at 72/150/300 DPI (ZIP for multi-page) | In your browser (pdfjs-dist) |
+| **PDF** | Images to PDF | PNG, JPG, WebP images | Multi-page PDF, fit to A4 or original size | In your browser (pdf-lib) |
+| **Data** | Excel to JSON | Workbook | JSON (first sheet, or all sheets keyed by name) | In your browser (SheetJS) |
 | **Data** | JSON to Excel | JSON records | XLSX | In your browser (SheetJS) |
 | **Data** | CSV to Excel | CSV | XLSX | In your browser (SheetJS) |
 | **Data** | Excel to CSV | XLSX, XLS | CSV | In your browser (SheetJS) |
-| **Data** | CSV to JSON | CSV | Formatted JSON | In your browser (SheetJS) |
+| **Data** | CSV to JSON | CSV | JSON objects, or row arrays when there's no header row | In your browser (SheetJS) |
 | **Data** | JSON to CSV | JSON array of objects | CSV | In your browser (SheetJS) |
 | **Text** | Markdown to HTML | Markdown (.md) | Clean HTML | In your browser (marked) |
 | **Text** | HTML to Markdown | HTML file | Clean Markdown (.md) | In your browser (turndown) |
 | **Documents** | Chat with PDF | PDF with selectable text | Streamed answer with clickable citations | Browser search, server generation (Gemini) |
 | **Documents** | PDF to Word | PDF document | Word (.docx) | Server (pdf2docx) |
-| **Documents** | PDF to Excel | PDF tables | Excel (.xlsx) | Server (pdfplumber) |
+| **Documents** | PDF to Excel | PDF tables | Excel (.xlsx) or CSV; lattice or stream detection | Server (pdfplumber) |
 | **Documents** | Word to PDF | DOCX, DOC | PDF | Server (LibreOffice) |
 | **Documents** | Excel to PDF | XLSX, XLS | PDF | Server (LibreOffice) |
 | **Documents** | PowerPoint to PDF | PPTX, PPT | PDF | Server (LibreOffice) |
-| **YouTube** | YouTube Downloader | Canonical URL | MP4 (1080p), MP3, M4A, Opus, WAV | Server (yt-dlp + ffmpeg) |
+| **Video** | YouTube Downloader (`/tools/youtube`) | Canonical URL | MP4 (1080p), MP3, M4A, Opus, WAV | Server (yt-dlp + ffmpeg), best effort |
 
 ---
 
@@ -170,9 +218,7 @@ npm run dev
 ```
 Open **[http://localhost:5173](http://localhost:5173)** in your browser.
 
-Open **Documents → Chat with PDF**, choose a selectable-text PDF up to 25 MB, then ask a question. Click a citation such as `[p. 4]` to view the original page. **Stop** cancels generation.
-
-Run `npm run chat-assets -w web` to download the pinned MiniLM model from Hugging Face before using Chat with PDF. The command skips assets already present. Development and production builds do not download the model automatically. The built site serves the model and WASM files from its own origin. PDF extraction, embedding and retrieval run on the device. IndexedDB retains the excerpts and vectors for reopening a PDF. **Clear stored data** erases all saved PDF indexes and the current conversation. The server forwards the question, up to five matching excerpts and up to six recent messages to Gemini. ConvertIt does not log or persist this content. On the free tier, Google may use requests and responses to improve its products. [Gemini API pricing and data use](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite)
+See [Chat with PDF](#-chat-with-pdf) for how to use it. `npm run dev` and `npm run build` fetch the pinned MiniLM model into `public/vendor/models/` on first run (`npm run chat-assets -w web` does the same on its own, skipping files already present). The built site serves the model and WASM files from its own origin.
 
 ---
 

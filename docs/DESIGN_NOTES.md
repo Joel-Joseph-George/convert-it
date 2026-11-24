@@ -59,8 +59,10 @@ Following Section 4.1 of `docs/ANTIGRAVITY_PROMPT.md`, we use the prose "Theme V
 
 | Design Folder / Screen | Target Route | Core Components | Responsibilities |
 |---|---|---|---|
-| `convertit_home_updated_popular_tools` / `convertit_home_dark_mode` | `/` | `TopBar`, `UrlInput`, `DropZone` (compact), `PopularToolsStrip`, `FeatureCallout`, `Footer` | Main landing page: YouTube input bar + quick dropzone + popular tools strip + privacy note. |
-| `convertit_youtube_loading_state`, `convertit_youtube_result`, `convertit_youtube_result_dark_mode` | `/` (conditional card) | `YouTubeResultCard`, `MediaPreview`, `FormatSelector`, `QualitySelector`, `AdvancedOptionsPanel` | Result card rendered on home below input when a valid link is submitted. |
+| `convertit_home_updated_popular_tools` / `convertit_home_dark_mode` | `/` | `TopBar`, photo drop target, image-editor shortcut cards, `PopularToolsStrip`, `FeatureCallout`, `Footer` | Landing page. Updated after v0.1.0: the hero is a photo drop target that opens the Image Editor; the YouTube link bar moved to `/tools/youtube`. Spacing, tokens and the popular-tools strip still follow this screen. |
+| `convertit_youtube_loading_state`, `convertit_youtube_result`, `convertit_youtube_result_dark_mode` | `/tools/youtube` (conditional card) | `YouTubeResultCard`, `MediaPreview`, `FormatSelector`, `QualitySelector`, `AdvancedOptionsPanel` | Result card rendered below the link input when a valid link is submitted. Previously on `/`. |
+| *(no mock-up)* | `/tools/image-editor` | `ImageEditorPage`, `CropStage`, side panels (Crop, Size, Export) | Two-column editor (stage + 300px controls, stacked on mobile). Built from existing tokens: chips reuse `FormatPills` styling, panels reuse the card surface. |
+| *(no mock-up)* | `/tools/chat-pdf` | `ChatPdfPage`, `PagePreview` | Upload, then question box with streamed answers; citations open the cited page beside the chat. |
 | `convertit_download_server_states` | `/` and `/tools/$toolId` | `ProgressBar`, `StatusPill`, `ServerWakeBanner`, `JobDownloadCard` | Ingestion, conversion progress, done state, and "Waking up server" notice. |
 | `convertit_error_edge_case_states` | Shared across routes | `ErrorAlert` | Inline alert cards for client errors, server limits, upstream blocks, offline states. |
 | `convertit_all_tools_desktop`, `convertit_all_tools_mobile` | `/tools` | `ToolSearch`, `CategoryChips`, `ToolGrid`, `ToolCard`, `EmptyState` | Directory of all available tools with instant client fuzzy search and category filtering. |

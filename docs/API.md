@@ -39,6 +39,7 @@ When an error occurs, the server responds with a standardized error object:
 | `UNSUPPORTED_FILE_TYPE` | 415 | File extension or magic bytes not permitted | No |
 | `FILE_CORRUPT` | 422 | Empty (0-byte) or corrupted file payload | No |
 | `INVALID_OPTIONS` | 422 | Malformed tool options JSON | No |
+| `NO_TABLES_FOUND` | 422 | PDF to Excel found no tables (scanned PDFs need OCR) | No |
 | `JOB_NOT_FOUND` | 404 | Job ID not found or already deleted | No |
 | `JOB_EXPIRED` | 410 | Result file exceeded TTL (default 15m) | No |
 | `RATE_LIMITED` | 429 | Exceeded per-minute requests or active jobs | Yes (`Retry-After`) |
@@ -59,7 +60,7 @@ Public operational health status. Does not touch third-party upstreams or YouTub
 ```json
 {
   "status": "ok",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "uptimeSec": 420,
   "ytdlpVersion": "2025.01.26",
   "queue": {
@@ -101,7 +102,7 @@ Ingests multipart form uploads for server-side processing. Streams data directly
 
 **Request (`multipart/form-data`)**:
 - `toolId` (string, required): Registered tool ID (e.g. `echo-convert`, `pdf-to-word`)
-- `options` (string, optional): JSON-encoded options object (defaults to `{}`)
+- `options` (string, optional): JSON-encoded options object (defaults to `{}`). The web app adds `format` with the chosen output (for example `"csv"` for `pdf-to-excel`). `pdf-to-excel` also reads `mode`: `"lattice"` (ruling lines, default) or `"stream"` (whitespace-separated columns).
 - `file` (binary file, required): Raw file payload
 
 **Response `202 Accepted`**:
@@ -219,7 +220,13 @@ The client concatenates token strings. Closing the connection cancels the provid
 | Condition | HTTP | Error code |
 |---|---|---|
 | Missing provider key | 503 | `PROVIDER_NOT_CONFIGURED` |
-| Provider rejected authentication or access | 502 | `PROVIDER_AUTH_ERROR` |
+| Provider rejected the key, authentication or access (Gemini sends bad keys as HTTP 400) | 502 | `PROVIDER_AUTH_ERROR` |
+| Configured model does not exist (`GEMINI_MODEL`) | 502 | `PROVIDER_MODEL_NOT_FOUND` |
+| Provider not available from the server's region | 502 | `PROVIDER_UNAVAILABLE` |
+| Provider rejected the request for another reason | 502 | `PROVIDER_BAD_REQUEST` |
+| Provider daily quota or token limit exhausted | 429 | `PROVIDER_QUOTA_EXHAUSTED` |
 | Provider rate limit | 429 | `PROVIDER_RATE_LIMITED`, with a 30-second retry hint |
 | Provider timeout | 504 | `PROVIDER_TIMEOUT` |
 | Other provider failure | 502 | `UPSTREAM_ERROR` |
+
+Every provider failure is logged as `chat_provider_error` with the provider's HTTP status, error type, message (first 500 characters) and the model name. The question, excerpts and answer are never logged.

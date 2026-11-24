@@ -415,3 +415,34 @@ The FastAPI endpoint streams answer text, maps provider errors, and releases the
 Verification passed for 75 Vitest tests, six Playwright flows and 66 pytest tests. The expected page appeared in the top five for all ten fixture questions. ESLint, TypeScript, the production build, Ruff, strict mypy and the backend dependency audit also passed.
 
 After switching to Gemini 3.1 Flash-Lite, a live browser check uploaded the handbook fixture, received a streamed answer identifying the blue trail markers, and opened PDF page 10 from its citation.
+
+## Image Editor & Home Page Revamp (PR #21)
+
+YouTube downloads became unreliable on the hosted server (#1), so the home page now leads with a browser-only photo editor. The hero is a photo drop target; four shortcut cards (Passport photo, Crop, Resize, Reduce to KB) open the editor set up for that job. The dropped file is handed over in memory, so refreshing the editor page loses it.
+
+`/tools/image-editor` (`src/tools/image-editor/`) decodes with `createImageBitmap` (EXIF orientation applied; HEIC through `heic2any`; sources above 24 MP are scaled down for mobile Safari's canvas limits). Rotations and flips are baked into a new source canvas so the crop rectangle always stays in source pixels. `CropStage` handles pointer drags on the box and its handles with aspect locking, plus arrow-key nudging. Passport presets for India, US, UK, Schengen, Canada and Australia lock the ratio, output exact pixels at 300 DPI and draw a face-guide oval sized to the middle of each country's head-height range. A print-sheet export tiles copies on a 6×4 in sheet with cut lines. Export binary-searches JPG/WebP quality to fit an optional KB limit and shows a live, debounced size estimate.
+
+The YouTube flow moved unchanged to `/tools/youtube` and is listed in All tools under Video. The e2e suite gained a home → editor upload test and runs the YouTube invalid-URL test on the new route.
+
+## Tool Testing Round & Fixes (PR #22)
+
+Every tool was exercised with generated fixtures (photo-like JPG, transparent PNG, WebP, SVG, WAV, WebM with audio, multi-page PDFs, CSV/TSV/JSON/XLSX, Markdown, HTML), driving the real queue store in the browser and checking each output's bytes: image dimensions and magic bytes, PDF page counts and rotation, ZIP entries, spreadsheet and JSON contents. Server tools were run against the live API with curl. Audio and video tools were additionally checked on the production build by downloading the files.
+
+Fixed:
+- **Compress image:** Low/Balanced/High were ignored (every file used 85%); they now map to 90/75/55% quality, Balanced by default. Same-format results that would be larger return the original.
+- **SVG to PNG/WebP:** always failed (`createImageBitmap` can't decode SVG); now decoded through an `<img>`, falling back to the viewBox for size.
+- **AVIF output:** Chrome silently produced PNG named `.avif`. AVIF is no longer offered as output, and any silent format fallback is reported as an error.
+- **PDF to images (#5):** never finished; now renders each page with pdf.js at the chosen DPI, ZIPs multi-page output, and releases the document.
+- **Split PDF and Images to PDF (#6):** page ranges (`1-3, 5, 8-`) and Fit (A4 or original size) are honoured; `all` produces one PDF per page in a ZIP; WebP is embedded (JPEG when opaque, PNG with transparency).
+- **Data tools:** CSV to JSON honours "First row is header"; Excel to JSON honours the sheet option.
+- **Queue:** an engine that returns nothing now fails the item instead of leaving it converting; combined rows say "Included in the file above".
+- **Server:** LibreOffice output keeps the upload's name instead of `input.pdf`; PDF to Excel writes CSV when chosen and honours lattice/stream mode.
+- **Media:** GIFs are no longer upscaled past the source width; ffmpeg.wasm loads through blob URLs so audio and video tools work on the Vite dev server.
+- **Chat with PDF:** provider errors are logged with Google's message and mapped to specific codes. Gemini reports an invalid key as HTTP 400, so it was previously shown as a generic `UPSTREAM_ERROR`.
+
+## Chat with PDF: Model Cache Recovery
+
+On the live site, Chat with PDF could fail permanently with "Could not run the local embedding model": an interrupted or corrupted download stored in Cache Storage (`transformers-cache`) was reused on every attempt, and **Clear stored data** only cleared IndexedDB. Planting a corrupted cache entry reproduced the failure on the live site. The worker now deletes the cached model and retries once with a fresh, uncached download; **Clear stored data** also deletes the model cache; and the error message includes the underlying reason. With the corrupted entry planted, the fixed build recovered and indexed the fixture in under 2 seconds.
+
+Verification: 93 Vitest tests, 7 Playwright flows and 105 pytest tests pass, along with ESLint, TypeScript, Ruff, mypy and the production build.
+

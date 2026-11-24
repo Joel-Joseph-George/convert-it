@@ -11,12 +11,14 @@ export type Reply =
   { progress: string } | { index: Index } | { vector: Float32Array } | { error: string };
 
 let engine: FeatureExtractionPipeline | undefined;
+const CACHE_KEY = 'transformers-cache';
 let device: 'webgpu' | 'wasm' = 'gpu' in navigator ? 'webgpu' : 'wasm';
 
 async function loadEngine() {
   if (engine) return engine;
   postMessage({ progress: 'Loading local embedding model…' });
   const { env, pipeline } = await import('@huggingface/transformers');
+  env.cacheKey = CACHE_KEY;
   env.allowRemoteModels = true;
   env.allowLocalModels = true;
   env.localModelPath = '/vendor/models/';
@@ -49,11 +51,33 @@ async function loadEngine() {
   try {
     engine = await create();
   } catch (error) {
-    if (device === 'wasm') throw error;
-    device = 'wasm';
+    if (device === 'webgpu') {
+      device = 'wasm';
+      try {
+        engine = await create();
+        return engine;
+      } catch {
+        // fall through to the cache reset below
+      }
+    }
+    // A failed or interrupted earlier download can leave a broken copy in the
+    // browser cache, and every later attempt then fails the same way. Drop it
+    // and try once more with a fresh download that bypasses the cache.
+    console.warn('Embedding model failed to load; retrying without the cache.', error);
+    await clearModelCache();
+    env.useBrowserCache = false;
     engine = await create();
   }
   return engine;
+}
+
+async function clearModelCache(): Promise<void> {
+  if (typeof caches !== 'undefined') await caches.delete(CACHE_KEY).catch(() => false);
+}
+
+function describe(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  return text.length > 160 ? `${text.slice(0, 160)}…` : text;
 }
 
 async function embed(texts: string[]): Promise<Float32Array[]> {
@@ -99,7 +123,7 @@ self.onmessage = async ({ data }: MessageEvent<Work>) => {
       error:
         error instanceof Error && error.message.startsWith('A sentence')
           ? error.message
-          : 'Could not run the local embedding model. Check the model download and try again.',
+          : `Could not run the local embedding model (${describe(error)}). Press "Clear stored data" and try again.`,
     });
   }
 };
