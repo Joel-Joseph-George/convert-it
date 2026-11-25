@@ -9,10 +9,13 @@ export interface RecentRun {
   created: number;
   names: string[];
   steps: Step[];
+  /** False when input files were not kept, so the run cannot be re-run. */
+  hasInputs?: boolean;
 }
 
 const HISTORY_LIMIT = 20;
 export const libraryChanged = 'convertit-library-changed';
+const KEEP_INPUTS_KEY = 'convertit-keep-inputs';
 let connection: Promise<IDBDatabase> | undefined;
 
 function database(): Promise<IDBDatabase> {
@@ -82,7 +85,42 @@ export const listHistory = (): Promise<RecentRun[]> =>
 export const loadInputs = (id: number): Promise<File[] | undefined> =>
   read('inputs', (store) => store.get(id));
 
+/** Whether the user opted in to keeping input files for re-runs (off by default). */
+export function keepsInputs(): boolean {
+  try {
+    return localStorage.getItem(KEEP_INPUTS_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setKeepInputs(keep: boolean) {
+  try {
+    if (keep) localStorage.setItem(KEEP_INPUTS_KEY, '1');
+    else localStorage.removeItem(KEEP_INPUTS_KEY);
+  } catch {
+    throw new Error('Browser storage is unavailable.');
+  }
+  if (!keep) await forgetInputs();
+  else window.dispatchEvent(new Event(libraryChanged));
+}
+
+/** Deletes every stored input file; history keeps only names and settings. */
+function forgetInputs() {
+  return write(['history', 'inputs'], (tx) => {
+    tx.objectStore('inputs').clear();
+    const cursor = tx.objectStore('history').openCursor();
+    cursor.onsuccess = () => {
+      const current = cursor.result;
+      if (!current) return;
+      current.update({ ...current.value, hasInputs: false });
+      current.continue();
+    };
+  });
+}
+
 export function rememberRun(steps: Step[], files: File[]) {
+  const keep = keepsInputs();
   return write(['history', 'inputs'], (tx) => {
     const history = tx.objectStore('history');
     const inputs = tx.objectStore('inputs');
@@ -90,9 +128,10 @@ export function rememberRun(steps: Step[], files: File[]) {
       created: Date.now(),
       names: files.map((file) => file.name),
       steps,
+      hasInputs: keep,
     });
     entry.onsuccess = () => {
-      inputs.put(files, entry.result);
+      if (keep) inputs.put(files, entry.result);
       const keys = history.getAllKeys();
       keys.onsuccess = () => {
         for (const id of keys.result.slice(

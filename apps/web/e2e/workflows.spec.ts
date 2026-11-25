@@ -54,6 +54,24 @@ test('image presets persist the format, quality and maximum width', async ({
   ).toEqual([16, 8]);
 });
 
+test('input files are not kept unless the user opts in', async ({ page }) => {
+  await page.goto('/tools/csv-to-json');
+  await page.locator('input[type=file]').setInputFiles({
+    name: 'people.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('name\nJane'),
+  });
+  await page.getByRole('button', { name: 'Convert remaining files' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Download', exact: true })
+  ).toBeVisible();
+  await page.getByText('Recent conversions', { exact: true }).click();
+  await expect(page.getByText('people.csv', { exact: true }).last()).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Inputs not kept' })
+  ).toBeDisabled();
+});
+
 test('storage failure leaves the completed conversion downloadable', async ({
   page,
 }) => {
@@ -87,6 +105,13 @@ test('HEIC images become one PDF and replay locally after a refresh', async ({
     if (req.method() === 'POST') posts.push(req.url());
   });
   await page.goto('/tools/heic-to-jpg');
+  await page.getByText('Recent conversions', { exact: true }).click();
+  await page
+    .getByLabel('Keep input files in this browser so runs can be re-run')
+    .check();
+  await expect(
+    page.getByText('Input files will be kept in this browser.')
+  ).toBeVisible();
   const buffer = await readFile(
     fileURLToPath(new URL('./fixtures/sample.heic', import.meta.url))
   );

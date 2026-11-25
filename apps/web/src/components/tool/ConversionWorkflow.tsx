@@ -9,17 +9,20 @@ import {
 import {
   clearHistory,
   deletePreset,
+  keepsInputs,
   libraryChanged,
   listHistory,
   listPresets,
   loadInputs,
   savePreset,
+  setKeepInputs,
   type Preset,
   type RecentRun,
 } from '@/features/workflows/library';
 import { OptionsPanel } from './OptionsPanel';
 
 const field = 'rounded-btn border border-border bg-card px-2 py-1.5 text-sm';
+const UNAVAILABLE = 'Browser storage is unavailable.';
 const section =
   'space-y-3 rounded-card border border-border bg-card p-4 text-sm';
 
@@ -136,6 +139,7 @@ export function ConversionLibrary({
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [loadingRun, setLoadingRun] = useState(false);
+  const [keep, setKeep] = useState(keepsInputs);
   useEffect(() => {
     let generation = 0;
     const refresh = async () => {
@@ -148,9 +152,10 @@ export function ConversionLibrary({
         if (version !== generation) return;
         setPresets(saved.filter((item) => item.toolId === first.toolId));
         setHistory(recent.reverse());
+        setKeep(keepsInputs());
+        setMessage((current) => (current === UNAVAILABLE ? '' : current));
       } catch {
-        if (version === generation)
-          setMessage('Browser storage is unavailable.');
+        if (version === generation) setMessage(UNAVAILABLE);
       }
     };
     void refresh();
@@ -171,7 +176,7 @@ export function ConversionLibrary({
       setMessage(
         error instanceof Error
           ? error.message
-          : 'Browser storage is unavailable.'
+          : UNAVAILABLE
       );
     }
   }
@@ -233,8 +238,26 @@ export function ConversionLibrary({
           Recent conversions
         </summary>
         <p className="text-muted-foreground">
-          This browser keeps inputs and settings for your last 20 conversions.
+          This browser keeps the file names and settings of your last 20
+          conversions. Input files are kept only if you turn that on below.
         </p>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={keep}
+            onChange={(event) => {
+              const next = event.target.checked;
+              setKeep(next);
+              void perform(
+                () => setKeepInputs(next),
+                next
+                  ? 'Input files will be kept in this browser.'
+                  : 'Stored input files deleted.'
+              ).then(() => setKeep(keepsInputs()));
+            }}
+          />
+          Keep input files in this browser so runs can be re-run
+        </label>
         {history.map((run) => (
           <div
             className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2"
@@ -254,7 +277,7 @@ export function ConversionLibrary({
             <Button
               size="sm"
               variant="secondary"
-              disabled={busy || loadingRun}
+              disabled={busy || loadingRun || run.hasInputs === false}
               onClick={() => {
                 setLoadingRun(true);
                 void perform(async () => {
@@ -267,7 +290,9 @@ export function ConversionLibrary({
                 }).finally(() => setLoadingRun(false));
               }}
             >
-              {run.steps.some(
+              {run.hasInputs === false
+                ? 'Inputs not kept'
+                : run.steps.some(
                 (step) => getToolById(step.toolId)?.engine.kind === 'server'
               )
                 ? 'Re-run with server upload'

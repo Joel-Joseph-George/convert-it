@@ -56,10 +56,20 @@ export interface QueueState {
     defaults: Record<string, string | number | boolean>
   ) => void;
   cancelItem: (toolId: string, itemId: string) => void;
-  historyError: string;
-  startConversion: (toolId: string, tail?: Step[], replay?: { first: Step; files: File[] }) => Promise<void>;
+  /** Chained steps after the tool's own step, per tool. */
+  tails: Record<string, Step[]>;
+  setTail: (toolId: string, steps: Step[]) => void;
+  historyError: Record<string, string>;
+  serverMaxUploadMB?: number;
+  setServerMaxUploadMB: (mb: number | undefined) => void;
+  startConversion: (toolId: string, opts?: { ids?: string[]; record?: boolean }) => Promise<void>;
+  /** Queues a stored run's inputs and settings on its tool; throws if it cannot. */
+  prepareReplay: (steps: Step[], files: File[]) => { toolId: string; ids: string[] };
   downloadAllZip: (toolId: string) => Promise<void>;
 }
+
+/** Tools whose queue is being processed; guards against overlapping runs. */
+const running = new Set<string>();
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -69,7 +79,8 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   items: {},
   selectedFormat: {},
   options: {},
-  historyError: '',
+  tails: {},
+  historyError: {},
 
   addFiles: (toolId: string, files: File[], defaultFormat: string) => {
     const current = get().items[toolId] || [];
@@ -209,74 +220,117 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
-  startConversion: async (toolId, tail = [], replay) => {
+  startConversion: async (toolId, { ids, record = true } = {}) => {
     const tool = getToolById(toolId);
-    if (!tool) return;
-
-    const current = get().items[toolId] || [];
-    if (current.some(item => item.status === 'converting')) {
-      if (replay) throw new Error('Wait for the current conversion to finish.');
-      return;
-    }
-    const first = replay?.first ?? defaultStep(tool);
-    const options = replay ? first.options : { ...first.options, ...get().options[toolId] };
-    let pending = current.filter(item => item.status === 'ready' || item.status === 'failed');
-    if (replay) {
-      if (current.length + replay.files.length > 20) {
-        throw new Error('Clear some queue items to make room for this run.');
-      }
-      pending = replay.files.map(file => ({
-        id: generateId(), file, status: 'ready', progress: 0, targetFormat: first.format,
-      }));
-      set(state => ({ items: { ...state.items, [toolId]: [...current, ...pending] } }));
-    }
+    if (!tool || running.has(toolId)) return;
+    const isPending = (item: QueueItem | undefined): item is QueueItem =>
+      !!item &&
+      (item.status === 'ready' || item.status === 'failed') &&
+      (!ids || ids.includes(item.id));
+    const pending = (get().items[toolId] || []).filter((item) => isPending(item));
     if (!pending.length) return;
-    const groups = [first, ...tail].some(combinesFiles) ? [pending] : pending.map(item => [item]);
-    const jobs = groups.map(group => {
-      const controller = new AbortController();
-      for (const item of group) {
-        get().updateItem(toolId, item.id, {
-          status: 'converting', progress: 0, abortController: controller, error: undefined,
-        });
-      }
-      return { group, controller };
-    });
+    const tail = get().tails[toolId] ?? [];
+    const first = defaultStep(tool);
+    const options = { ...first.options, ...get().options[toolId] };
+    const groups = [first, ...tail].some(combinesFiles) ? [pending] : pending.map((item) => [item]);
+    const workflowLimits = { serverMaxUploadMB: get().serverMaxUploadMB };
+    let recordedSteps: Step[] | undefined;
+    const recordedFiles: File[] = [];
 
-    for (const { group, controller } of jobs) {
-      const files = group.map(item => item.file);
-      const steps = [{ toolId, format: group[0]?.targetFormat ?? first.format, options }, ...tail];
-      try {
-        const outputs = await runWorkflow(steps, files, {
-          signal: controller.signal,
-          onProgress: progress => group.forEach(item => get().updateItem(toolId, item.id, { progress })),
-        });
-        controller.signal.throwIfAborted();
-        group.forEach((item, index) => {
-          const output = outputs[index];
-          get().updateItem(toolId, item.id, {
-            status: 'done', progress: 100, abortController: undefined,
-            result: output ? { ...output, url: URL.createObjectURL(output.blob) } : undefined,
-          });
-        });
-        try {
-          await rememberRun(steps, files);
-          set({ historyError: '' });
-        } catch {
-          set({ historyError: 'Conversion finished. Browser storage could not save this run.' });
-        }
-      } catch (error) {
-        const code = error && typeof error === 'object' && 'code' in error
-          ? String(error.code) : 'CONVERSION_FAILED';
-        const message = error && typeof error === 'object' && 'message' in error
-          ? String(error.message) : 'Conversion failed';
+    running.add(toolId);
+    try {
+      for (const candidates of groups) {
+        // Skip items the user cancelled or removed while they were waiting.
+        const latest = get().items[toolId] || [];
+        const group = candidates
+          .map((candidate) => latest.find((item) => item.id === candidate.id))
+          .filter(isPending);
+        if (!group.length) continue;
+        const controller = new AbortController();
         for (const item of group) {
           get().updateItem(toolId, item.id, {
-            status: controller.signal.aborted ? 'cancelled' : 'failed',
-            abortController: undefined, error: { code, message },
+            status: 'converting', progress: 0, abortController: controller, error: undefined,
           });
         }
+        const files = group.map((item) => item.file);
+        const steps = [{ toolId, format: group[0]?.targetFormat ?? first.format, options }, ...tail];
+        try {
+          const outputs = await runWorkflow(steps, files, {
+            signal: controller.signal,
+            onProgress: (progress) => group.forEach((item) => get().updateItem(toolId, item.id, { progress })),
+          }, workflowLimits);
+          controller.signal.throwIfAborted();
+          group.forEach((item, index) => {
+            const output = outputs[index];
+            get().updateItem(toolId, item.id, {
+              status: 'done', progress: 100, abortController: undefined,
+              result: output ? { ...output, url: URL.createObjectURL(output.blob) } : undefined,
+            });
+          });
+          recordedSteps = steps;
+          recordedFiles.push(...files);
+        } catch (error) {
+          const code = error && typeof error === 'object' && 'code' in error
+            ? String(error.code) : 'CONVERSION_FAILED';
+          const message = error && typeof error === 'object' && 'message' in error
+            ? String(error.message) : 'Conversion failed';
+          for (const item of group) {
+            get().updateItem(toolId, item.id, {
+              status: controller.signal.aborted ? 'cancelled' : 'failed',
+              abortController: undefined, error: { code, message },
+            });
+          }
+        }
       }
+    } finally {
+      running.delete(toolId);
     }
+
+    // One history entry per run (not per file); replays don't add duplicates.
+    if (record && recordedSteps && recordedFiles.length) {
+      let historyError = '';
+      try {
+        await rememberRun(recordedSteps, recordedFiles);
+      } catch {
+        historyError = 'Conversion finished. Browser storage could not save this run.';
+      }
+      set((state) => ({ historyError: { ...state.historyError, [toolId]: historyError } }));
+    }
+  },
+
+  prepareReplay: (steps, files) => {
+    const [initial, ...following] = steps;
+    const tool = initial && getToolById(initial.toolId);
+    if (!initial || !tool) throw new Error('This tool is no longer available.');
+    if (running.has(tool.id)) throw new Error('Wait for the current conversion to finish.');
+    const current = get().items[tool.id] || [];
+    if (current.length + files.length > 20) {
+      throw new Error('Clear some queue items to make room for this run.');
+    }
+    const withDefaults = (step: Step): Step => {
+      const stepTool = getToolById(step.toolId);
+      if (!stepTool) throw new Error('This tool is no longer available.');
+      return { ...step, options: { ...defaultStep(stepTool).options, ...step.options } };
+    };
+    const tail = following.map(withDefaults);
+    const added: QueueItem[] = files.map((file) => ({
+      id: generateId(), file, status: 'ready', progress: 0, targetFormat: initial.format,
+    }));
+    set((state) => ({
+      items: { ...state.items, [tool.id]: [...current, ...added] },
+      selectedFormat: { ...state.selectedFormat, [tool.id]: initial.format },
+      options: { ...state.options, [tool.id]: withDefaults(initial).options },
+      tails: { ...state.tails, [tool.id]: tail },
+    }));
+    return { toolId: tool.id, ids: added.map((item) => item.id) };
+  },
+
+  setTail: (toolId, steps) => {
+    set((state) => ({ tails: { ...state.tails, [toolId]: steps } }));
+  },
+
+  setServerMaxUploadMB: (mb) => {
+    set({ serverMaxUploadMB: mb });
   },
 
   downloadAllZip: async (toolId: string) => {

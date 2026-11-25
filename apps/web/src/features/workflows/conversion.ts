@@ -47,7 +47,8 @@ export interface Output {
 export async function runWorkflow(
   steps: Step[],
   inputs: File[],
-  ctx: ConvertContext
+  ctx: ConvertContext,
+  limits: { serverMaxUploadMB?: number } = {}
 ): Promise<Output[]> {
   let files = inputs;
   let outputs: Output[] = [];
@@ -82,10 +83,14 @@ export async function runWorkflow(
               `${tool.name} cannot use the previous output "${file.name}".`
             );
           }
-          if (file.size > tool.limits.maxFileSizeMB * 1024 * 1024) {
+          const maxMB =
+            tool.engine.kind === 'server' && limits.serverMaxUploadMB
+              ? Math.min(tool.limits.maxFileSizeMB, limits.serverMaxUploadMB)
+              : tool.limits.maxFileSizeMB;
+          if (file.size > maxMB * 1024 * 1024) {
             throw new EngineError(
               'FILE_TOO_LARGE',
-              `The intermediate file exceeds the ${tool.limits.maxFileSizeMB} MB limit for ${tool.name}.`
+              `The intermediate file exceeds the ${maxMB} MB limit for ${tool.name}.`
             );
           }
         }

@@ -42,7 +42,6 @@ function ToolPage(): React.ReactElement {
 function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   const tool = getToolById(toolId);
   const navigate = useNavigate();
-  const [tail, setTail] = React.useState<Step[]>([]);
 
   const {
     items,
@@ -56,10 +55,18 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
     initOptions,
     startConversion,
     historyError,
+    tails,
+    setTail,
+    prepareReplay,
+    setServerMaxUploadMB,
     downloadAllZip,
   } = useQueueStore();
+  const tail: Step[] = tails[toolId] ?? [];
 
   const { isWakingUp, serverError, limits } = useServerHealth();
+  React.useEffect(() => {
+    setServerMaxUploadMB(limits?.maxUploadMB);
+  }, [limits?.maxUploadMB, setServerMaxUploadMB]);
 
   const isServerTool = tool?.engine.kind === 'server';
   const usesServer = isServerTool || tail.some(step => getToolById(step.toolId)?.engine.kind === 'server');
@@ -111,14 +118,14 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   };
 
   const handleConvert = (): void => {
-    void startConversion(tool.id, tail);
+    void startConversion(tool.id);
   };
 
   const first = { toolId, format: currentFormat, options: { ...defaultStep(tool).options, ...currentOptions } };
   const changeFormat = (format: string) => {
     setTargetFormat(tool.id, format);
     if (tail[0] && !nextTools({ ...first, format }).some(candidate => candidate.id === tail[0]?.toolId)) {
-      setTail([]);
+      setTail(tool.id, []);
     }
   };
 
@@ -229,21 +236,23 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
         />
       )}
 
-      <ChainEditor first={first} tail={tail} onChange={setTail} />
+      <ChainEditor first={first} tail={tail} onChange={(steps) => setTail(tool.id, steps)} />
       <ConversionLibrary
-        first={first} busy={isConverting} storageError={historyError}
+        first={first} busy={isConverting} storageError={historyError[toolId] ?? ''}
         apply={preset => {
           changeFormat(preset.format);
           for (const [id, value] of Object.entries({ ...defaultStep(tool).options, ...preset.options })) {
             setOption(tool.id, id, value);
           }
         }}
-        replay={async ([initial, ...following], files) => {
-          if (!initial || !getToolById(initial.toolId)) throw new Error('This tool is no longer available.');
-          await startConversion(initial.toolId, following, { first: initial, files });
-          if (initial.toolId !== toolId) {
-            await navigate({ to: '/tools/$toolId', params: { toolId: initial.toolId } });
+        replay={async (steps, files) => {
+          // Queue the run (with its chain and settings) on its own tool, show
+          // that page, then convert there so progress and cancel are visible.
+          const run = prepareReplay(steps, files);
+          if (run.toolId !== toolId) {
+            await navigate({ to: '/tools/$toolId', params: { toolId: run.toolId } });
           }
+          await startConversion(run.toolId, { ids: run.ids, record: false });
         }}
       />
 
