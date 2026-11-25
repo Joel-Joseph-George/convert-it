@@ -52,6 +52,18 @@ async function load() {
 
 const file = (n: string) => new File(['x'], n);
 
+function inst(i: number): FakeFFmpeg {
+  const instance = instances[i];
+  if (!instance) throw new Error(`no FFmpeg instance ${i}`);
+  return instance;
+}
+
+function finishExec(i: number): void {
+  const pending = inst(i).pendingExec;
+  if (!pending) throw new Error('no exec running');
+  pending.resolve(0);
+}
+
 describe('ffmpeg engine (#7)', () => {
   beforeEach(() => {
     instances.length = 0;
@@ -63,9 +75,9 @@ describe('ffmpeg engine (#7)', () => {
     const p1 = ffmpegAudioEngine.run([file('a.wav')], {}, 'mp3', { onProgress: () => {} });
     const p2 = ffmpegAudioEngine.run([file('b.wav')], {}, 'mp3', { onProgress: () => {} });
     await vi.waitFor(() => expect(instances[0]?.pendingExec).toBeTruthy());
-    instances[0]!.pendingExec!.resolve(0);
+    finishExec(0);
     await vi.waitFor(() => expect(instances[0]?.exec).toHaveBeenCalledTimes(2));
-    instances[0]!.pendingExec!.resolve(0);
+    finishExec(0);
     await Promise.all([p1, p2]);
     expect(instances).toHaveLength(1);
   });
@@ -76,13 +88,13 @@ describe('ffmpeg engine (#7)', () => {
     const second = vi.fn();
     const p1 = ffmpegAudioEngine.run([file('a.wav')], {}, 'mp3', { onProgress: first });
     await vi.waitFor(() => expect(instances[0]?.pendingExec).toBeTruthy());
-    instances[0]!.pendingExec!.resolve(0);
+    finishExec(0);
     await p1;
 
     const p2 = ffmpegAudioEngine.run([file('b.wav')], {}, 'mp3', { onProgress: second });
     await vi.waitFor(() => expect(instances[0]?.exec).toHaveBeenCalledTimes(2));
-    instances[0]!.emit(0.5);
-    instances[0]!.pendingExec!.resolve(0);
+    inst(0).emit(0.5);
+    finishExec(0);
     await p2;
 
     expect(second).toHaveBeenCalledWith(50);
@@ -99,11 +111,11 @@ describe('ffmpeg engine (#7)', () => {
     await vi.waitFor(() => expect(instances[0]?.pendingExec).toBeTruthy());
     controller.abort();
     await expect(p).rejects.toMatchObject({ code: 'CONVERSION_CANCELLED' });
-    expect(instances[0]!.terminate).toHaveBeenCalled();
+    expect(inst(0).terminate).toHaveBeenCalled();
 
     const p2 = ffmpegVideoEngine.run([file('b.mov')], {}, 'mp4', { onProgress: () => {} });
     await vi.waitFor(() => expect(instances[1]?.pendingExec).toBeTruthy());
-    instances[1]!.pendingExec!.resolve(0);
+    finishExec(1);
     await expect(p2).resolves.toHaveLength(1);
   });
 
@@ -116,7 +128,7 @@ describe('ffmpeg engine (#7)', () => {
 
     const p2 = run();
     await vi.waitFor(() => expect(instances[1]?.pendingExec).toBeTruthy());
-    instances[1]!.pendingExec!.resolve(0);
+    finishExec(1);
     await expect(p2).resolves.toHaveLength(1);
   });
 });

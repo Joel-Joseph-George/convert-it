@@ -5,6 +5,12 @@ import { dedupeZipNames } from '@/features/engines/zipUtil';
 
 const TOOL = 'pdf-to-word';
 
+function itemId(name: string): string {
+  const item = useQueueStore.getState().items[TOOL]?.find((i) => i.file.name === name);
+  if (!item) throw new Error(`no queue item ${name}`);
+  return item.id;
+}
+
 function deferred<T>() {
   let resolve!: (v: T) => void;
   let reject!: (e: unknown) => void;
@@ -39,8 +45,7 @@ describe('queue batch behaviour (#8)', () => {
       .mockImplementation(async (_t, file) => (file.name === 'a.pdf' ? first.promise : result(file.name)));
 
     const run = useQueueStore.getState().startConversion(TOOL);
-    const b = useQueueStore.getState().items[TOOL]?.find((i) => i.file.name === 'b.pdf');
-    useQueueStore.getState().removeItem(TOOL, b!.id);
+    useQueueStore.getState().removeItem(TOOL, itemId('b.pdf'));
     first.resolve(result('a.pdf'));
     await run;
 
@@ -67,7 +72,7 @@ describe('queue batch behaviour (#8)', () => {
     const a = useQueueStore.getState().items[TOOL]?.find((i) => i.file.name === 'a.pdf');
     expect(a?.status).toBe('failed');
 
-    useQueueStore.getState().retryItem(TOOL, a!.id);
+    useQueueStore.getState().retryItem(TOOL, itemId('a.pdf'));
     second.resolve(result('b.pdf'));
     await run;
     await vi.waitFor(() =>
