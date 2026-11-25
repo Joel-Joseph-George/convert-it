@@ -10,7 +10,7 @@ describe('Footer', () => {
 
   it('renders GitHub link', () => {
     render(<Footer />);
-    const link = screen.getByRole('link', { name: /github repository/i });
-    expect(link).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /convertit on github/i });
+    expect(link).toHaveAttribute('href', 'https://github.com/Joel-Joseph-George/convert-it');
   });
 });
