@@ -8,6 +8,7 @@ export interface OptionsPanelProps {
   values: Record<string, string | number | boolean>;
   onChange: (optionId: string, value: string | number | boolean) => void;
   className?: string;
+  idPrefix?: string;
 }
 
 export const OptionsPanel: React.FC<OptionsPanelProps> = ({
@@ -15,6 +16,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
   values,
   onChange,
   className,
+  idPrefix = 'opt',
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -36,7 +38,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
       case 'select':
         return (
           <select
-            id={`opt-${opt.id}`}
+            id={`${idPrefix}-${opt.id}`}
             value={String(val)}
             onChange={(e) => onChange(opt.id, e.target.value)}
             className="h-9 w-full rounded-btn border border-border bg-card px-2.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -54,7 +56,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
           <div className="flex items-center gap-3">
             <input
               type="range"
-              id={`opt-${opt.id}`}
+              id={`${idPrefix}-${opt.id}`}
               min={opt.min ?? 0}
               max={opt.max ?? 100}
               step={opt.step ?? 1}
@@ -73,7 +75,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
           <label className="relative inline-flex cursor-pointer items-center">
             <input
               type="checkbox"
-              id={`opt-${opt.id}`}
+              id={`${idPrefix}-${opt.id}`}
               checked={Boolean(val)}
               onChange={(e) => onChange(opt.id, e.target.checked)}
               className="peer sr-only"
@@ -86,7 +88,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
         return (
           <input
             type="number"
-            id={`opt-${opt.id}`}
+            id={`${idPrefix}-${opt.id}`}
             value={Number(val) || ''}
             onChange={(e) => onChange(opt.id, Number(e.target.value))}
             min={opt.min}
@@ -100,7 +102,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
         return (
           <input
             type="text"
-            id={`opt-${opt.id}`}
+            id={`${idPrefix}-${opt.id}`}
             value={String(val)}
             onChange={(e) => onChange(opt.id, e.target.value)}
             className="h-9 w-full rounded-btn border border-border bg-card px-2.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -123,7 +125,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
             {basicOptions.filter(shouldRenderOption).map((opt) => (
               <div key={opt.id} className="space-y-1.5">
                 <label
-                  htmlFor={`opt-${opt.id}`}
+                  htmlFor={`${idPrefix}-${opt.id}`}
                   className="block text-xs font-medium text-muted-foreground"
                 >
                   {opt.label}
@@ -157,7 +159,7 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
               {advancedOptions.filter(shouldRenderOption).map((opt) => (
                 <div key={opt.id} className="space-y-1.5">
                   <label
-                    htmlFor={`opt-${opt.id}`}
+                    htmlFor={`${idPrefix}-${opt.id}`}
                     className="block text-xs font-medium text-muted-foreground"
                   >
                     {opt.label}

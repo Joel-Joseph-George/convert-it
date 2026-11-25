@@ -63,6 +63,13 @@ export const TOOLS: ToolDefinition[] = [
         advanced: true,
       },
       {
+        id: 'onlyShrink',
+        label: 'Use resize width as a maximum',
+        type: 'toggle',
+        default: false,
+        advanced: true,
+      },
+      {
         id: 'stripMetadata',
         label: 'Strip metadata for privacy',
         type: 'toggle',

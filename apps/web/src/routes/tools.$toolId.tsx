@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Play, Cpu, ShieldCheck } from 'lucide-react';
 import { getToolById } from '@/features/registry/tools';
 import { useQueueStore } from '@/features/queue/queueStore';
@@ -8,6 +8,8 @@ import { PrivacyLine } from '@/components/shared/PrivacyLine';
 import { DropZone } from '@/components/tool/DropZone';
 import { FormatPills } from '@/components/tool/FormatPills';
 import { OptionsPanel } from '@/components/tool/OptionsPanel';
+import { ChainEditor, ConversionLibrary } from '@/components/tool/ConversionWorkflow';
+import { defaultStep, nextTools, type Step } from '@/features/workflows/conversion';
 import { FileQueue } from '@/components/tool/FileQueue';
 import { DataPreviewTable } from '@/components/tool/DataPreviewTable';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,7 @@ function ToolPage(): React.ReactElement {
 
 function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   const tool = getToolById(toolId);
+  const navigate = useNavigate();
 
   const {
     items,
@@ -51,16 +54,25 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
     setOption,
     initOptions,
     startConversion,
+    historyError,
+    tails,
+    setTail,
+    prepareReplay,
+    setServerMaxUploadMB,
     downloadAllZip,
   } = useQueueStore();
+  const tail: Step[] = tails[toolId] ?? [];
 
   const { isWakingUp, serverError, limits } = useServerHealth();
+  React.useEffect(() => {
+    setServerMaxUploadMB(limits?.maxUploadMB);
+  }, [limits?.maxUploadMB, setServerMaxUploadMB]);
 
   const isServerTool = tool?.engine.kind === 'server';
+  const usesServer = isServerTool || tail.some(step => getToolById(step.toolId)?.engine.kind === 'server');
   const isToolUnavailable =
-    isServerTool &&
     limits?.serverTools !== undefined &&
-    limits.serverTools[tool.id] === false;
+    [toolId, ...tail.map(step => step.toolId)].some(id => limits.serverTools?.[id] === false);
 
   const effectiveMaxFileSizeMB =
     (isServerTool && limits?.maxUploadMB
@@ -106,7 +118,15 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   };
 
   const handleConvert = (): void => {
-    startConversion(tool.id);
+    void startConversion(tool.id);
+  };
+
+  const first = { toolId, format: currentFormat, options: { ...defaultStep(tool).options, ...currentOptions } };
+  const changeFormat = (format: string) => {
+    setTargetFormat(tool.id, format);
+    if (tail[0] && !nextTools({ ...first, format }).some(candidate => candidate.id === tail[0]?.toolId)) {
+      setTail(tool.id, []);
+    }
   };
 
   const hasPendingItems = toolItems.some(
@@ -150,14 +170,14 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
           </div>
         )}
 
-        <PrivacyLine engine={tool.engine.kind} />
+        <PrivacyLine engine={usesServer ? 'server' : 'browser'} />
       </div>
 
       {/* Server wake up banner */}
-      {isServerTool && isWakingUp && <ServerWakeBanner />}
+      {usesServer && isWakingUp && <ServerWakeBanner />}
 
       {/* Server offline error */}
-      {isServerTool && serverError && (
+      {usesServer && serverError && (
         <ErrorAlert
           error={{
             code: 'SERVER_OFFLINE',
@@ -196,7 +216,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
         items={toolItems}
         onRemoveItem={(id) => removeItem(tool.id, id)}
         onClearQueue={() => clearQueue(tool.id)}
-        onRetryItem={() => startConversion(tool.id)}
+        onRetryItem={handleConvert}
         onDownloadAllZip={() => downloadAllZip(tool.id)}
       />
 
@@ -204,7 +224,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
       <FormatPills
         outputs={tool.outputs}
         selectedFormat={currentFormat}
-        onSelectFormat={(fmt) => setTargetFormat(tool.id, fmt)}
+        onSelectFormat={changeFormat}
       />
 
       {/* Tool Options */}
@@ -215,6 +235,27 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
           onChange={(optId, val) => setOption(tool.id, optId, val)}
         />
       )}
+
+      <ChainEditor first={first} tail={tail} onChange={(steps) => setTail(tool.id, steps)} />
+      <ConversionLibrary
+        key={toolId}
+        first={first} busy={isConverting} storageError={historyError[toolId] ?? ''}
+        apply={preset => {
+          changeFormat(preset.format);
+          for (const [id, value] of Object.entries({ ...defaultStep(tool).options, ...preset.options })) {
+            setOption(tool.id, id, value);
+          }
+        }}
+        replay={async (steps, files) => {
+          // Queue the run (with its chain and settings) on its own tool, show
+          // that page, then convert there so progress and cancel are visible.
+          const run = prepareReplay(steps, files);
+          if (run.toolId !== toolId) {
+            await navigate({ to: '/tools/$toolId', params: { toolId: run.toolId } });
+          }
+          await startConversion(run.toolId, { ids: run.ids, record: false });
+        }}
+      />
 
       {/* Main Convert Action Button */}
       {toolItems.length > 0 && (
@@ -242,18 +283,18 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
         <div className="flex items-center gap-1.5">
           <Cpu className="h-3.5 w-3.5 text-primary stroke-[1.75]" />
           <span>
-            {tool.engine.kind === 'browser'
+            {!usesServer
               ? 'WASM Sandbox Active • Client Memory'
               : 'Server Sandbox • Ephemeral Isolation'}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <span>0 bps network transfer</span>
+          <span>{usesServer ? 'Server processing' : 'Local processing'}</span>
           <span>•</span>
           <span className="flex items-center gap-1 text-success">
             <ShieldCheck className="h-3.5 w-3.5" />
-            100% Private
+            {usesServer ? 'Ephemeral jobs' : 'On this device'}
           </span>
         </div>
       </div>
