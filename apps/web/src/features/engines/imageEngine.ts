@@ -110,8 +110,8 @@ export const imageEngine: BrowserEngine = {
 
         if (resizeWidth > 0 && targetWidth > 0) {
           const ratio = targetHeight / targetWidth;
-          targetWidth = resizeWidth;
-          targetHeight = Math.round(resizeWidth * ratio);
+          targetWidth = options.onlyShrink ? Math.min(targetWidth, resizeWidth) : resizeWidth;
+          targetHeight = Math.max(1, Math.round(targetWidth * ratio));
         } else if (scalePercentage !== 100 && scalePercentage > 0) {
           targetWidth = Math.round(targetWidth * (scalePercentage / 100));
           targetHeight = Math.round(targetHeight * (scalePercentage / 100));

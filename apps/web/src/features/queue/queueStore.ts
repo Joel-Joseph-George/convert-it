@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import { getToolById } from '../registry/tools';
-import { runConversion } from '../engines/registry';
+import { combinesFiles, defaultStep, runWorkflow, type Step } from '../workflows/conversion';
+import { rememberRun } from '../workflows/library';
 import { createZipArchive, ZipFileEntry } from '../engines/zipUtil';
-import { EngineError } from '../engines/types';
-import { runServerConversion } from '../server/serverConversion';
 
 export type QueueItemStatus =
   | 'ready'
@@ -57,7 +56,8 @@ export interface QueueState {
     defaults: Record<string, string | number | boolean>
   ) => void;
   cancelItem: (toolId: string, itemId: string) => void;
-  startConversion: (toolId: string) => Promise<void>;
+  historyError: string;
+  startConversion: (toolId: string, tail?: Step[], replay?: { first: Step; files: File[] }) => Promise<void>;
   downloadAllZip: (toolId: string) => Promise<void>;
 }
 
@@ -69,6 +69,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   items: {},
   selectedFormat: {},
   options: {},
+  historyError: '',
 
   addFiles: (toolId: string, files: File[], defaultFormat: string) => {
     const current = get().items[toolId] || [];
@@ -156,7 +157,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     set((state) => {
       const current = state.items[toolId] || [];
       const updatedItems = current.map((item) =>
-        item.status === 'ready' ? { ...item, targetFormat: format } : item
+        item.status === 'ready' || item.status === 'failed' ? { ...item, targetFormat: format } : item
       );
 
       return {
@@ -208,159 +209,72 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
-  startConversion: async (toolId: string) => {
+  startConversion: async (toolId, tail = [], replay) => {
     const tool = getToolById(toolId);
     if (!tool) return;
 
     const current = get().items[toolId] || [];
-    const pending = current.filter(
-      (i) => i.status === 'ready' || i.status === 'failed'
-    );
-    if (pending.length === 0) return;
-
-    const toolOptions = get().options[toolId] || {};
-
-    // For tools that combine all files together (like merge-pdf)
-    if (tool.id === 'merge-pdf' || tool.id === 'images-to-pdf') {
-      const controller = new AbortController();
-      const files = pending.map((p) => p.file);
-
-      pending.forEach((item) => {
-        get().updateItem(toolId, item.id, {
-          status: 'converting',
-          progress: 10,
-          abortController: controller,
-        });
-      });
-
-      try {
-        const results = await runConversion(
-          tool,
-          files,
-          toolOptions,
-          tool.outputs[0]?.value || 'pdf',
-          {
-            onProgress: (prog) => {
-              pending.forEach((item) => {
-                get().updateItem(toolId, item.id, { progress: prog });
-              });
-            },
-            signal: controller.signal,
-          }
-        );
-
-        const firstResult = results[0];
-        if (!firstResult) {
-          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
-        }
-        {
-          const url = URL.createObjectURL(firstResult.blob);
-          pending.forEach((item, idx) => {
-            get().updateItem(toolId, item.id, {
-              status: 'done',
-              progress: 100,
-              result:
-                idx === 0
-                  ? {
-                      filename: firstResult.filename,
-                      blob: firstResult.blob,
-                      url,
-                      sizeBytes: firstResult.sizeBytes,
-                    }
-                  : undefined,
-            });
-          });
-        }
-      } catch (err) {
-        const isCancelled = controller.signal.aborted;
-        pending.forEach((item) => {
-          get().updateItem(toolId, item.id, {
-            status: isCancelled ? 'cancelled' : 'failed',
-            error: {
-              code: err instanceof EngineError ? err.code : 'CONVERSION_FAILED',
-              message: (err as Error).message,
-            },
-          });
-        });
-      }
+    if (current.some(item => item.status === 'converting')) {
+      if (replay) throw new Error('Wait for the current conversion to finish.');
       return;
     }
-
-    // Process items individually
-    for (const item of pending) {
+    const first = replay?.first ?? defaultStep(tool);
+    const options = replay ? first.options : { ...first.options, ...get().options[toolId] };
+    let pending = current.filter(item => item.status === 'ready' || item.status === 'failed');
+    if (replay) {
+      if (current.length + replay.files.length > 20) {
+        throw new Error('Clear some queue items to make room for this run.');
+      }
+      pending = replay.files.map(file => ({
+        id: generateId(), file, status: 'ready', progress: 0, targetFormat: first.format,
+      }));
+      set(state => ({ items: { ...state.items, [toolId]: [...current, ...pending] } }));
+    }
+    if (!pending.length) return;
+    const groups = [first, ...tail].some(combinesFiles) ? [pending] : pending.map(item => [item]);
+    const jobs = groups.map(group => {
       const controller = new AbortController();
-      get().updateItem(toolId, item.id, {
-        status: 'converting',
-        progress: 0,
-        abortController: controller,
-        error: undefined,
-      });
-
-      try {
-        let res: { filename: string; blob: Blob; sizeBytes: number } | undefined;
-
-        if (tool.engine.kind === 'server') {
-          // Server engines with more than one output (e.g. PDF → XLSX or CSV) need the choice.
-          res = await runServerConversion(tool.id, item.file, { ...toolOptions, format: item.targetFormat }, {
-            onProgress: (prog) => {
-              get().updateItem(toolId, item.id, { progress: prog });
-            },
-            signal: controller.signal,
-          });
-        } else {
-          const results = await runConversion(
-            tool,
-            [item.file],
-            toolOptions,
-            item.targetFormat,
-            {
-              onProgress: (prog) => {
-                get().updateItem(toolId, item.id, { progress: prog });
-              },
-              signal: controller.signal,
-            }
-          );
-          res = results[0];
-        }
-
-        if (!res) {
-          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
-        }
-        {
-          const url = URL.createObjectURL(res.blob);
-          get().updateItem(toolId, item.id, {
-            status: 'done',
-            progress: 100,
-            result: {
-              filename: res.filename,
-              blob: res.blob,
-              url,
-              sizeBytes: res.sizeBytes,
-            },
-          });
-        }
-      } catch (err: unknown) {
-        const isCancelled = controller.signal.aborted;
-        let errCode = 'CONVERSION_FAILED';
-        let errMsg = 'Conversion failed';
-
-        if (err instanceof EngineError) {
-          errCode = err.code;
-          errMsg = err.message;
-        } else if (err && typeof err === 'object' && 'code' in err) {
-          errCode = String((err as { code: unknown }).code);
-          errMsg = String((err as { message?: unknown }).message ?? 'Server error');
-        } else if (err instanceof Error) {
-          errMsg = err.message;
-        }
-
+      for (const item of group) {
         get().updateItem(toolId, item.id, {
-          status: isCancelled ? 'cancelled' : 'failed',
-          error: {
-            code: errCode,
-            message: errMsg,
-          },
+          status: 'converting', progress: 0, abortController: controller, error: undefined,
         });
+      }
+      return { group, controller };
+    });
+
+    for (const { group, controller } of jobs) {
+      const files = group.map(item => item.file);
+      const steps = [{ toolId, format: group[0]?.targetFormat ?? first.format, options }, ...tail];
+      try {
+        const outputs = await runWorkflow(steps, files, {
+          signal: controller.signal,
+          onProgress: progress => group.forEach(item => get().updateItem(toolId, item.id, { progress })),
+        });
+        controller.signal.throwIfAborted();
+        group.forEach((item, index) => {
+          const output = outputs[index];
+          get().updateItem(toolId, item.id, {
+            status: 'done', progress: 100, abortController: undefined,
+            result: output ? { ...output, url: URL.createObjectURL(output.blob) } : undefined,
+          });
+        });
+        try {
+          await rememberRun(steps, files);
+          set({ historyError: '' });
+        } catch {
+          set({ historyError: 'Conversion finished. Browser storage could not save this run.' });
+        }
+      } catch (error) {
+        const code = error && typeof error === 'object' && 'code' in error
+          ? String(error.code) : 'CONVERSION_FAILED';
+        const message = error && typeof error === 'object' && 'message' in error
+          ? String(error.message) : 'Conversion failed';
+        for (const item of group) {
+          get().updateItem(toolId, item.id, {
+            status: controller.signal.aborted ? 'cancelled' : 'failed',
+            abortController: undefined, error: { code, message },
+          });
+        }
       }
     }
   },

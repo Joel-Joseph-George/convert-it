@@ -86,7 +86,7 @@ export const FileRow: React.FC<FileRowProps> = ({
             <span>{formatBytes(item.file.size)}</span>
             <span>•</span>
             <span className="uppercase text-primary font-medium">
-              → {item.targetFormat}
+              → {item.result?.filename.split('.').pop() || item.targetFormat}
             </span>
             {item.result && (
               <>
@@ -97,6 +97,9 @@ export const FileRow: React.FC<FileRowProps> = ({
               </>
             )}
           </div>
+          {item.status === 'failed' && item.error && (
+            <p className="mt-1 text-xs text-destructive" role="alert">{item.error.message}</p>
+          )}
         </div>
       </div>
 
