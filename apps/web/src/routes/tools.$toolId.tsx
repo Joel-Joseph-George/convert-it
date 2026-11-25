@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Play, Cpu, ShieldCheck } from 'lucide-react';
 import { getToolById } from '@/features/registry/tools';
 import { useQueueStore } from '@/features/queue/queueStore';
@@ -51,10 +51,12 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
     setOption,
     initOptions,
     startConversion,
+    retryItem,
     downloadAllZip,
   } = useQueueStore();
 
-  const { isWakingUp, serverError, limits } = useServerHealth();
+  const { isWakingUp, serverError, limits, retry: retryHealth } = useServerHealth();
+  const navigate = useNavigate();
 
   const isServerTool = tool?.engine.kind === 'server';
   const isToolUnavailable =
@@ -163,6 +165,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
             code: 'SERVER_OFFLINE',
             message: 'The conversion server is currently offline or unreachable.',
           }}
+          onAction={retryHealth}
         />
       )}
 
@@ -173,6 +176,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
             code: 'TOOL_DISABLED',
             message: 'This tool is unavailable on the server because the required system engine is not installed.',
           }}
+          onAction={() => void navigate({ to: '/tools' })}
         />
       )}
 
@@ -196,7 +200,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
         items={toolItems}
         onRemoveItem={(id) => removeItem(tool.id, id)}
         onClearQueue={() => clearQueue(tool.id)}
-        onRetryItem={() => startConversion(tool.id)}
+        onRetryItem={(id) => retryItem(tool.id, id)}
         onDownloadAllZip={() => downloadAllZip(tool.id)}
       />
 

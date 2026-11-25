@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import secrets
+import shutil
 import time
 from collections.abc import AsyncGenerator
 from typing import Annotated, Any
@@ -85,8 +86,6 @@ async def create_convert_job(
     except AppError:
         # Clean up partial upload immediately
         if os.path.exists(job_dir):
-            import shutil
-
             shutil.rmtree(job_dir, ignore_errors=True)
         raise
     except Exception as e:
@@ -102,8 +101,6 @@ async def create_convert_job(
     # Sniff magic bytes if file non-empty
     if bytes_written == 0:
         if os.path.exists(job_dir):
-            import shutil
-
             shutil.rmtree(job_dir, ignore_errors=True)
         raise AppError(
             code="FILE_CORRUPT",
@@ -144,7 +141,14 @@ async def create_convert_job(
     record.queuePosition = pos
     await store.update_job(record)
 
-    logger.info("job_enqueued", job_id=job_id, tool_id=toolId, job_class=job_class, pos=pos)
+    logger.info(
+        "job_enqueued",
+        job_id=job_id,
+        tool_id=toolId,
+        job_class=job_class,
+        pos=pos,
+        client_ip=client_ip,
+    )
     return JobCreatedResponse(jobId=job_id)
 
 

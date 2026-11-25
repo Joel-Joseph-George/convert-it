@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     ]
     ACCESS_CODE: str | None = None
     TRUSTED_PROXY_HOPS: int = 0
+    # Header set by the edge proxy that always holds the real client IP and that
+    # clients can't spoof (e.g. "true-client-ip" or "cf-connecting-ip" behind Cloudflare).
+    # Takes precedence over X-Forwarded-For when present.
+    CLIENT_IP_HEADER: str | None = None
 
     QUEUE_BACKEND: Literal["memory", "redis"] = "memory"
     REDIS_URL: str = "redis://localhost:6379/0"

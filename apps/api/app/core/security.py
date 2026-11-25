@@ -13,7 +13,19 @@ from app.core.errors import AppError
 
 
 def get_client_ip(request: Request) -> str:
-    """Extract client IP respecting TRUSTED_PROXY_HOPS if configured."""
+    """Resolve the client IP behind reverse proxies.
+
+    Order: CLIENT_IP_HEADER (if configured and present), then X-Forwarded-For counted
+    TRUSTED_PROXY_HOPS entries from the right (entries further left are client-supplied
+    and spoofable), then the socket address.
+    """
+    if settings.CLIENT_IP_HEADER:
+        value = request.headers.get(settings.CLIENT_IP_HEADER)
+        if value:
+            first = value.split(",")[0].strip()
+            if first:
+                return first
+
     if settings.TRUSTED_PROXY_HOPS > 0:
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:

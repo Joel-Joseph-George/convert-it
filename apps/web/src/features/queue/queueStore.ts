@@ -57,9 +57,16 @@ export interface QueueState {
     defaults: Record<string, string | number | boolean>
   ) => void;
   cancelItem: (toolId: string, itemId: string) => void;
+  /** Re-queue one failed/cancelled item; joins the running batch if there is one. */
+  retryItem: (toolId: string, itemId: string) => void;
   startConversion: (toolId: string) => Promise<void>;
   downloadAllZip: (toolId: string) => Promise<void>;
 }
+
+// Tools with a batch currently running. A second startConversion call while one is
+// running is a no-op: the running loop re-reads the store and picks up any items that
+// became ready (new files, retries) instead of converting them twice.
+const runningTools = new Set<string>();
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -208,160 +215,40 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
+  retryItem: (toolId: string, itemId: string) => {
+    const item = (get().items[toolId] || []).find((i) => i.id === itemId);
+    if (!item || (item.status !== 'failed' && item.status !== 'cancelled')) return;
+    get().updateItem(toolId, itemId, { status: 'ready', progress: 0, error: undefined });
+    void get().startConversion(toolId);
+  },
+
   startConversion: async (toolId: string) => {
     const tool = getToolById(toolId);
     if (!tool) return;
+    if (runningTools.has(toolId)) return;
 
-    const current = get().items[toolId] || [];
-    const pending = current.filter(
-      (i) => i.status === 'ready' || i.status === 'failed'
-    );
-    if (pending.length === 0) return;
-
-    const toolOptions = get().options[toolId] || {};
-
-    // For tools that combine all files together (like merge-pdf)
-    if (tool.id === 'merge-pdf' || tool.id === 'images-to-pdf') {
-      const controller = new AbortController();
-      const files = pending.map((p) => p.file);
-
-      pending.forEach((item) => {
-        get().updateItem(toolId, item.id, {
-          status: 'converting',
-          progress: 10,
-          abortController: controller,
-        });
-      });
-
-      try {
-        const results = await runConversion(
-          tool,
-          files,
-          toolOptions,
-          tool.outputs[0]?.value || 'pdf',
-          {
-            onProgress: (prog) => {
-              pending.forEach((item) => {
-                get().updateItem(toolId, item.id, { progress: prog });
-              });
-            },
-            signal: controller.signal,
-          }
-        );
-
-        const firstResult = results[0];
-        if (!firstResult) {
-          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
-        }
-        {
-          const url = URL.createObjectURL(firstResult.blob);
-          pending.forEach((item, idx) => {
-            get().updateItem(toolId, item.id, {
-              status: 'done',
-              progress: 100,
-              result:
-                idx === 0
-                  ? {
-                      filename: firstResult.filename,
-                      blob: firstResult.blob,
-                      url,
-                      sizeBytes: firstResult.sizeBytes,
-                    }
-                  : undefined,
-            });
-          });
-        }
-      } catch (err) {
-        const isCancelled = controller.signal.aborted;
-        pending.forEach((item) => {
-          get().updateItem(toolId, item.id, {
-            status: isCancelled ? 'cancelled' : 'failed',
-            error: {
-              code: err instanceof EngineError ? err.code : 'CONVERSION_FAILED',
-              message: (err as Error).message,
-            },
-          });
-        });
+    // "Convert remaining files" also retries failed items.
+    for (const item of get().items[toolId] || []) {
+      if (item.status === 'failed') {
+        get().updateItem(toolId, item.id, { status: 'ready', progress: 0, error: undefined });
       }
-      return;
     }
 
-    // Process items individually
-    for (const item of pending) {
-      const controller = new AbortController();
-      get().updateItem(toolId, item.id, {
-        status: 'converting',
-        progress: 0,
-        abortController: controller,
-        error: undefined,
-      });
-
-      try {
-        let res: { filename: string; blob: Blob; sizeBytes: number } | undefined;
-
-        if (tool.engine.kind === 'server') {
-          // Server engines with more than one output (e.g. PDF → XLSX or CSV) need the choice.
-          res = await runServerConversion(tool.id, item.file, { ...toolOptions, format: item.targetFormat }, {
-            onProgress: (prog) => {
-              get().updateItem(toolId, item.id, { progress: prog });
-            },
-            signal: controller.signal,
-          });
-        } else {
-          const results = await runConversion(
-            tool,
-            [item.file],
-            toolOptions,
-            item.targetFormat,
-            {
-              onProgress: (prog) => {
-                get().updateItem(toolId, item.id, { progress: prog });
-              },
-              signal: controller.signal,
-            }
-          );
-          res = results[0];
+    runningTools.add(toolId);
+    try {
+      if (tool.id === 'merge-pdf' || tool.id === 'images-to-pdf') {
+        await runCombined(toolId);
+      } else {
+        // Always take the next item from the live store, so removed/cleared items are
+        // skipped and retried or newly added ones join this run.
+        for (;;) {
+          const next = (get().items[toolId] || []).find((i) => i.status === 'ready');
+          if (!next) break;
+          await runSingle(toolId, next);
         }
-
-        if (!res) {
-          throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
-        }
-        {
-          const url = URL.createObjectURL(res.blob);
-          get().updateItem(toolId, item.id, {
-            status: 'done',
-            progress: 100,
-            result: {
-              filename: res.filename,
-              blob: res.blob,
-              url,
-              sizeBytes: res.sizeBytes,
-            },
-          });
-        }
-      } catch (err: unknown) {
-        const isCancelled = controller.signal.aborted;
-        let errCode = 'CONVERSION_FAILED';
-        let errMsg = 'Conversion failed';
-
-        if (err instanceof EngineError) {
-          errCode = err.code;
-          errMsg = err.message;
-        } else if (err && typeof err === 'object' && 'code' in err) {
-          errCode = String((err as { code: unknown }).code);
-          errMsg = String((err as { message?: unknown }).message ?? 'Server error');
-        } else if (err instanceof Error) {
-          errMsg = err.message;
-        }
-
-        get().updateItem(toolId, item.id, {
-          status: isCancelled ? 'cancelled' : 'failed',
-          error: {
-            code: errCode,
-            message: errMsg,
-          },
-        });
       }
+    } finally {
+      runningTools.delete(toolId);
     }
   },
 
@@ -394,3 +281,143 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     setTimeout(() => URL.revokeObjectURL(zipUrl), 60000);
   },
 }));
+
+function itemExists(toolId: string, itemId: string): boolean {
+  return (useQueueStore.getState().items[toolId] || []).some((i) => i.id === itemId);
+}
+
+function toErrorInfo(err: unknown): { code: string; message: string } {
+  if (err instanceof EngineError) return { code: err.code, message: err.message };
+  if (err && typeof err === 'object' && 'code' in err) {
+    return {
+      code: String((err as { code: unknown }).code),
+      message: String((err as { message?: unknown }).message ?? 'Server error'),
+    };
+  }
+  if (err instanceof Error) return { code: 'CONVERSION_FAILED', message: err.message };
+  return { code: 'CONVERSION_FAILED', message: 'Conversion failed' };
+}
+
+/** Tools that combine every file into one output (merge-pdf, images-to-pdf). */
+async function runCombined(toolId: string): Promise<void> {
+  const { getState } = useQueueStore;
+  const tool = getToolById(toolId);
+  if (!tool) return;
+  const pending = (getState().items[toolId] || []).filter((i) => i.status === 'ready');
+  if (pending.length === 0) return;
+
+  const controller = new AbortController();
+  pending.forEach((item) => {
+    getState().updateItem(toolId, item.id, {
+      status: 'converting',
+      progress: 10,
+      abortController: controller,
+      error: undefined,
+    });
+  });
+
+  try {
+    const results = await runConversion(
+      tool,
+      pending.map((p) => p.file),
+      getState().options[toolId] || {},
+      tool.outputs[0]?.value || 'pdf',
+      {
+        onProgress: (prog) => {
+          pending.forEach((item) => getState().updateItem(toolId, item.id, { progress: prog }));
+        },
+        signal: controller.signal,
+      }
+    );
+
+    const firstResult = results[0];
+    if (!firstResult) {
+      throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
+    }
+    // The combined file belongs to the first item still in the queue.
+    const owner = pending.find((item) => itemExists(toolId, item.id));
+    if (!owner) return;
+    const url = URL.createObjectURL(firstResult.blob);
+    pending.forEach((item) => {
+      getState().updateItem(toolId, item.id, {
+        status: 'done',
+        progress: 100,
+        abortController: undefined,
+        result:
+          item.id === owner.id
+            ? {
+                filename: firstResult.filename,
+                blob: firstResult.blob,
+                url,
+                sizeBytes: firstResult.sizeBytes,
+              }
+            : undefined,
+      });
+    });
+  } catch (err) {
+    const isCancelled = controller.signal.aborted;
+    pending.forEach((item) => {
+      getState().updateItem(toolId, item.id, {
+        status: isCancelled ? 'cancelled' : 'failed',
+        abortController: undefined,
+        error: toErrorInfo(err),
+      });
+    });
+  }
+}
+
+async function runSingle(toolId: string, item: QueueItem): Promise<void> {
+  const { getState } = useQueueStore;
+  const tool = getToolById(toolId);
+  if (!tool) return;
+
+  const controller = new AbortController();
+  getState().updateItem(toolId, item.id, {
+    status: 'converting',
+    progress: 0,
+    abortController: controller,
+    error: undefined,
+  });
+
+  const ctx = {
+    onProgress: (prog: number) => getState().updateItem(toolId, item.id, { progress: prog }),
+    signal: controller.signal,
+  };
+  const toolOptions = getState().options[toolId] || {};
+
+  try {
+    let res: { filename: string; blob: Blob; sizeBytes: number } | undefined;
+    if (tool.engine.kind === 'server') {
+      // Server engines with more than one output (e.g. PDF → XLSX or CSV) need the choice.
+      res = await runServerConversion(
+        tool.id,
+        item.file,
+        { ...toolOptions, format: item.targetFormat },
+        ctx
+      );
+    } else {
+      const results = await runConversion(tool, [item.file], toolOptions, item.targetFormat, ctx);
+      res = results[0];
+    }
+
+    if (!res) {
+      throw new EngineError('CONVERSION_FAILED', 'The converter finished without producing a file.');
+    }
+    // Removed or cancelled while converting: drop the result instead of leaking a URL.
+    if (controller.signal.aborted || !itemExists(toolId, item.id)) return;
+
+    const url = URL.createObjectURL(res.blob);
+    getState().updateItem(toolId, item.id, {
+      status: 'done',
+      progress: 100,
+      abortController: undefined,
+      result: { filename: res.filename, blob: res.blob, url, sizeBytes: res.sizeBytes },
+    });
+  } catch (err: unknown) {
+    getState().updateItem(toolId, item.id, {
+      status: controller.signal.aborted ? 'cancelled' : 'failed',
+      abortController: undefined,
+      error: toErrorInfo(err),
+    });
+  }
+}
