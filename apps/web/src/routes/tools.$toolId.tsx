@@ -36,7 +36,7 @@ function ToolPage(): React.ReactElement {
   if (toolId === 'youtube') {
     return <React.Suspense fallback={<p role="status">Opening downloader…</p>}><YouTubePage /></React.Suspense>;
   }
-  return <ConverterPage key={toolId} toolId={toolId} />;
+  return <ConverterPage toolId={toolId} />;
 }
 
 function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
@@ -238,6 +238,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
 
       <ChainEditor first={first} tail={tail} onChange={(steps) => setTail(tool.id, steps)} />
       <ConversionLibrary
+        key={toolId}
         first={first} busy={isConverting} storageError={historyError[toolId] ?? ''}
         apply={preset => {
           changeFormat(preset.format);
