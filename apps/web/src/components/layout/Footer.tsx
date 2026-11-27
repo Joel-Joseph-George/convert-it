@@ -11,10 +11,11 @@ export const Footer: React.FC = () => {
         </div>
 
         <a
-          href="https://github.com"
+          href="https://github.com/Joel-Joseph-George/convert-it"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="GitHub Repository"
+          aria-label="ConvertIt on GitHub"
+          title="ConvertIt on GitHub"
           className="text-muted-foreground transition-colors hover:text-foreground"
         >
           <svg

@@ -56,6 +56,8 @@ export interface QueueState {
     defaults: Record<string, string | number | boolean>
   ) => void;
   cancelItem: (toolId: string, itemId: string) => void;
+  /** Re-queue one failed/cancelled item; runs after the current batch if one is running. */
+  retryItem: (toolId: string, itemId: string) => void;
   /** Chained steps after the tool's own step, per tool. */
   tails: Record<string, Step[]>;
   setTail: (toolId: string, steps: Step[]) => void;
@@ -70,6 +72,8 @@ export interface QueueState {
 
 /** Tools whose queue is being processed; guards against overlapping runs. */
 const running = new Set<string>();
+/** Items retried while their tool was running; converted once that run finishes. */
+const retryAfterRun = new Map<string, Set<string>>();
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -220,6 +224,20 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
+  retryItem: (toolId, itemId) => {
+    const item = (get().items[toolId] || []).find((i) => i.id === itemId);
+    if (!item || (item.status !== 'failed' && item.status !== 'cancelled')) return;
+    get().updateItem(toolId, itemId, { status: 'ready', progress: 0, error: undefined });
+    if (running.has(toolId)) {
+      // Don't start a second loop over the same queue; pick it up when this run ends.
+      const ids = retryAfterRun.get(toolId) ?? new Set<string>();
+      ids.add(itemId);
+      retryAfterRun.set(toolId, ids);
+      return;
+    }
+    void get().startConversion(toolId, { ids: [itemId] });
+  },
+
   startConversion: async (toolId, { ids, record = true } = {}) => {
     const tool = getToolById(toolId);
     if (!tool || running.has(toolId)) return;
@@ -260,8 +278,11 @@ export const useQueueStore = create<QueueState>((set, get) => ({
             onProgress: (progress) => group.forEach((item) => get().updateItem(toolId, item.id, { progress })),
           }, workflowLimits);
           controller.signal.throwIfAborted();
+          const stillQueued = new Set((get().items[toolId] || []).map((item) => item.id));
           group.forEach((item, index) => {
             const output = outputs[index];
+            // Removed while converting: don't create an object URL nobody will revoke.
+            if (!stillQueued.has(item.id)) return;
             get().updateItem(toolId, item.id, {
               status: 'done', progress: 100, abortController: undefined,
               result: output ? { ...output, url: URL.createObjectURL(output.blob) } : undefined,
@@ -286,6 +307,12 @@ export const useQueueStore = create<QueueState>((set, get) => ({
       running.delete(toolId);
     }
 
+    const retried = retryAfterRun.get(toolId);
+    retryAfterRun.delete(toolId);
+    const retryRun = retried?.size
+      ? get().startConversion(toolId, { ids: [...retried], record })
+      : undefined;
+
     // One history entry per run (not per file); replays don't add duplicates.
     if (record && recordedSteps && recordedFiles.length) {
       let historyError = '';
@@ -296,6 +323,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
       }
       set((state) => ({ historyError: { ...state.historyError, [toolId]: historyError } }));
     }
+    await retryRun;
   },
 
   prepareReplay: (steps, files) => {

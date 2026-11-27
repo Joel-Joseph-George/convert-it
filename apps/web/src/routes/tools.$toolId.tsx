@@ -54,6 +54,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
     setOption,
     initOptions,
     startConversion,
+    retryItem,
     historyError,
     tails,
     setTail,
@@ -63,7 +64,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   } = useQueueStore();
   const tail: Step[] = tails[toolId] ?? [];
 
-  const { isWakingUp, serverError, limits } = useServerHealth();
+  const { isWakingUp, serverError, limits, retry: retryHealth } = useServerHealth();
   React.useEffect(() => {
     setServerMaxUploadMB(limits?.maxUploadMB);
   }, [limits?.maxUploadMB, setServerMaxUploadMB]);
@@ -183,6 +184,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
             code: 'SERVER_OFFLINE',
             message: 'The conversion server is currently offline or unreachable.',
           }}
+          onAction={retryHealth}
         />
       )}
 
@@ -193,6 +195,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
             code: 'TOOL_DISABLED',
             message: 'This tool is unavailable on the server because the required system engine is not installed.',
           }}
+          onAction={() => void navigate({ to: '/tools' })}
         />
       )}
 
@@ -216,7 +219,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
         items={toolItems}
         onRemoveItem={(id) => removeItem(tool.id, id)}
         onClearQueue={() => clearQueue(tool.id)}
-        onRetryItem={handleConvert}
+        onRetryItem={(id) => retryItem(tool.id, id)}
         onDownloadAllZip={() => downloadAllZip(tool.id)}
       />
 

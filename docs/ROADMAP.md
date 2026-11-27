@@ -65,17 +65,18 @@
 
 ### Open bugs and chores (GitHub issues)
 - [ ] **#1** YouTube downloads blocked on Render (bot check). Needs cookies or a proxy; see `apps/api/README.md`.
-- [ ] **#7** ffmpeg.wasm: progress goes to the wrong file, cancel doesn't stop, duplicate instances.
-- [ ] **#8** Queue: removed items still convert, retry double-converts, ZIP name collisions.
-- [ ] **#9** API: failed upload raises `UnboundLocalError` instead of a clean error.
-- [ ] **#10** Rate limits treat every user as one IP behind Render's proxy (`TRUSTED_PROXY_HOPS`).
-- [ ] **#11** Error buttons do nothing on tool pages; server health never re-checks.
+- [x] **#7** ffmpeg.wasm: progress goes to the wrong file, cancel doesn't stop, duplicate instances.
+- [x] **#8** Queue: removed items still convert, retry double-converts, ZIP name collisions.
+- [x] **#9** API: failed upload raises `UnboundLocalError` instead of a clean error.
+- [ ] **#10** Rate limits treat every user as one IP behind Render's proxy. Code fixed (job polling exempt from the per-minute limit, optional `CLIENT_IP_HEADER`); still needs `TRUSTED_PROXY_HOPS` set on Render and checked against a real request.
+- [x] **#11** Error buttons do nothing on tool pages; server health never re-checks.
 - [ ] **#13** Access code can't be entered in the UI. **#12** Cache `/vendor` assets on Vercel. **#14** Replace `xlsx@0.18.5`. **#15** Repo hygiene.
 
 ### Manual test checklist (not covered by the automated round)
 - [ ] HEIC to JPG with a real iPhone photo.
 - [ ] PowerPoint to PDF with a real `.pptx`.
 - [ ] YouTube downloader on the deployed API.
+- [ ] Rate-limit IP on Render: set `TRUSTED_PROXY_HOPS=1`, then confirm two different networks get separate buckets (the `job_enqueued` log line shows the resolved `client_ip`).
 - [ ] Chat with PDF end to end on the deployed site, after setting a valid `GEMINI_API_KEY`.
 - [ ] Image editor and converters on Safari (macOS and iOS) and Android Chrome.
 

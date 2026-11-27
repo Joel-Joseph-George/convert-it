@@ -73,6 +73,30 @@ def test_get_client_ip_trusted_proxy_hops(monkeypatch: pytest.MonkeyPatch) -> No
     assert get_client_ip(req) == "70.41.3.18"
 
 
+def test_get_client_ip_ignores_spoofed_left_entries(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
+    headers = [(b"x-forwarded-for", b"1.2.3.4, 198.51.100.7")]
+    req = Request({"type": "http", "client": ("10.0.0.1", 1), "headers": headers})
+    assert get_client_ip(req) == "198.51.100.7"
+
+
+def test_get_client_ip_header_takes_precedence(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "CLIENT_IP_HEADER", "true-client-ip")
+    monkeypatch.setattr(settings, "TRUSTED_PROXY_HOPS", 1)
+    headers = [
+        (b"true-client-ip", b"203.0.113.9"),
+        (b"x-forwarded-for", b"203.0.113.9, 172.71.0.1"),
+    ]
+    req = Request({"type": "http", "client": ("10.0.0.1", 1), "headers": headers})
+    assert get_client_ip(req) == "203.0.113.9"
+
+    # Header configured but absent -> falls back to X-Forwarded-For
+    req2 = Request(
+        {"type": "http", "client": ("10.0.0.1", 1), "headers": [(b"x-forwarded-for", b"5.6.7.8")]}
+    )
+    assert get_client_ip(req2) == "5.6.7.8"
+
+
 def test_verify_access_code(monkeypatch: pytest.MonkeyPatch) -> None:
     # When disabled, passes without header
     monkeypatch.setattr(settings, "ACCESS_CODE", None)
