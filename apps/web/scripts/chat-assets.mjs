@@ -1,29 +1,39 @@
 // Prepare same-origin assets before dev/build. No model host is contacted by the browser.
-import { mkdir, access, writeFile, rename, copyFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { createRequire } from 'node:module';
+import { mkdir, access, writeFile, rename, copyFile } from "node:fs/promises";
+import path from "node:path";
+import {
+  MODEL_ID,
+  MODEL_REVISION,
+  packageDir,
+  publicDir,
+  pruneSiblings,
+  vendorPaths,
+} from "./vendor-paths.mjs";
 
-const vendor = fileURLToPath(new URL('../public/vendor/', import.meta.url));
-const require = createRequire(import.meta.url);
-const runtime = path.dirname(require.resolve('onnxruntime-web'));
-await mkdir(path.join(vendor, 'onnx'), { recursive: true });
-for (const variant of ['', '.asyncify']) {
-  for (const ext of ['mjs', 'wasm']) {
-    const name = 'ort-wasm-simd-threaded' + variant + '.' + ext;
-    await copyFile(path.join(runtime, name), path.join(vendor, 'onnx', name));
+const paths = vendorPaths();
+
+// Both builds are needed: the runtime picks the asyncify one (WebGPU) on most browsers
+// and the plain one on Safari < 26 without WebGPU. Only the chosen one is downloaded.
+const onnxOut = publicDir(paths.onnx);
+pruneSiblings(onnxOut);
+await mkdir(onnxOut, { recursive: true });
+const runtime = path.join(packageDir("onnxruntime-web"), "dist");
+for (const variant of ["", ".asyncify"]) {
+  for (const ext of ["mjs", "wasm"]) {
+    const name = "ort-wasm-simd-threaded" + variant + "." + ext;
+    await copyFile(path.join(runtime, name), path.join(onnxOut, name));
   }
 }
 
-const model = 'Xenova/all-MiniLM-L6-v2';
-const revision = '751bff37182d3f1213fa05d7196b954e230abad9';
-const folder = path.join(vendor, 'models', model);
-await mkdir(path.join(folder, 'onnx'), { recursive: true });
+const modelsOut = publicDir(paths.models);
+pruneSiblings(modelsOut);
+const folder = path.join(modelsOut, MODEL_ID);
+await mkdir(path.join(folder, "onnx"), { recursive: true });
 for (const name of [
-  'config.json',
-  'tokenizer.json',
-  'tokenizer_config.json',
-  'onnx/model_quantized.onnx',
+  "config.json",
+  "tokenizer.json",
+  "tokenizer_config.json",
+  "onnx/model_quantized.onnx",
 ]) {
   const target = path.join(folder, name);
   if (
@@ -33,10 +43,11 @@ for (const name of [
     )
   )
     continue;
-  const url = `https://huggingface.co/${model}/resolve/${revision}/${name}`;
+  const url = `https://huggingface.co/${MODEL_ID}/resolve/${MODEL_REVISION}/${name}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(180_000) });
-  if (!res.ok) throw new Error(`Model asset ${name} returned HTTP ${res.status}`);
-  const temp = target + '.' + process.pid + '.tmp';
+  if (!res.ok)
+    throw new Error(`Model asset ${name} returned HTTP ${res.status}`);
+  const temp = target + "." + process.pid + ".tmp";
   await writeFile(temp, new Uint8Array(await res.arrayBuffer()));
   await rename(temp, target);
 }

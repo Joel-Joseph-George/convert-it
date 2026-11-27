@@ -2,9 +2,11 @@ import React from 'react';
 import { ChevronDown, ChevronUp, Download, Music, Video, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormatPills } from '@/components/tool/FormatPills';
+import { useShallow } from 'zustand/react/shallow';
 import { getBitrateOptions, useYouTubeStore } from './youtubeStore';
 
 export const YouTubeResultCard: React.FC = () => {
+  // Pick fields with useShallow so download progress ticks don't re-render this card.
   const {
     info,
     mode,
@@ -27,7 +29,31 @@ export const YouTubeResultCard: React.FC = () => {
     toggleAdvanced,
     startDownload,
     reset,
-  } = useYouTubeStore();
+  } = useYouTubeStore(
+    useShallow((s) => ({
+      info: s.info,
+      mode: s.mode,
+      selectedQuality: s.selectedQuality,
+      selectedFormat: s.selectedFormat,
+      selectedBitrate: s.selectedBitrate,
+      trimStart: s.trimStart,
+      trimEnd: s.trimEnd,
+      embedThumbnail: s.embedThumbnail,
+      embedMetadata: s.embedMetadata,
+      showAdvanced: s.showAdvanced,
+      setMode: s.setMode,
+      setQuality: s.setQuality,
+      setFormat: s.setFormat,
+      setBitrate: s.setBitrate,
+      setTrimStart: s.setTrimStart,
+      setTrimEnd: s.setTrimEnd,
+      setEmbedThumbnail: s.setEmbedThumbnail,
+      setEmbedMetadata: s.setEmbedMetadata,
+      toggleAdvanced: s.toggleAdvanced,
+      startDownload: s.startDownload,
+      reset: s.reset,
+    }))
+  );
 
   if (!info) return null;
 

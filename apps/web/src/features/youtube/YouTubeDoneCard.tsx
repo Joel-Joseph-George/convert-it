@@ -29,7 +29,8 @@ export const YouTubeDoneCard: React.FC = () => {
       return;
     }
     // The server responds with Content-Disposition: attachment, so the page stays put.
-    window.location.href = apiClient.getDownloadUrl(resultJobId);
+    // A plain navigation can't send X-Access-Code, so the link carries a signed token.
+    window.location.href = apiClient.getDownloadUrl(resultJobId, result.downloadToken);
   };
 
   return (

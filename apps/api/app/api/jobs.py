@@ -17,7 +17,12 @@ from app.core.admission import check_admission
 from app.core.config import settings
 from app.core.errors import AppError
 from app.core.logging import logger
-from app.core.security import sanitize_filename, sniff_magic_type, verify_access_code
+from app.core.security import (
+    sanitize_filename,
+    sniff_magic_type,
+    verify_access_code,
+    verify_download_access,
+)
 from app.jobs.models import JobClass, JobRecord, JobSnapshot
 from app.jobs.queue import JobQueue
 from app.jobs.runner import JobRunner
@@ -258,7 +263,7 @@ async def cancel_job(request: Request, job_id: str) -> dict[str, str]:
 @router.get("/{job_id}/download")
 async def download_job_result(request: Request, job_id: str) -> Response:
     """Stream converted file result to client with safe Content-Disposition and cleanup timer."""
-    verify_access_code(request)
+    verify_download_access(request, job_id)
     store: JobStore = request.app.state.store
 
     job = await store.get_job(job_id)

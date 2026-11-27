@@ -7,21 +7,47 @@ export interface DataPreview {
   totalRows: number;
 }
 
+/**
+ * Parsed workbooks, keyed by the File, so the preview and the conversion of the
+ * same file share one parse. Entries go away with the File.
+ */
+const workbooks = new WeakMap<File, Promise<XLSX.WorkBook>>();
+
+async function parseWorkbook(file: File): Promise<XLSX.WorkBook> {
+  const buffer = await file.arrayBuffer();
+  if (file.name.toLowerCase().endsWith('.json')) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(buffer));
+    } catch {
+      throw new EngineError('FILE_CORRUPT', `Invalid JSON in ${file.name}`);
+    }
+    const arrayData = Array.isArray(parsed) ? parsed : [parsed];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(arrayData), 'Data');
+    return workbook;
+  }
+  try {
+    return XLSX.read(buffer, { type: 'array', dense: true });
+  } catch {
+    throw new EngineError('FILE_CORRUPT', `Could not read tabular spreadsheet ${file.name}`);
+  }
+}
+
+export function loadWorkbook(file: File): Promise<XLSX.WorkBook> {
+  let workbook = workbooks.get(file);
+  if (!workbook) {
+    workbook = parseWorkbook(file);
+    // Don't keep a failed parse around.
+    workbook.catch(() => workbooks.delete(file));
+    workbooks.set(file, workbook);
+  }
+  return workbook;
+}
+
 export async function getPreviewRows(file: File): Promise<DataPreview> {
   try {
-    const buffer = await file.arrayBuffer();
-    let workbook: XLSX.WorkBook;
-
-    if (file.name.endsWith('.json')) {
-      const text = new TextDecoder().decode(buffer);
-      const parsed = JSON.parse(text);
-      const arrayData = Array.isArray(parsed) ? parsed : [parsed];
-      const worksheet = XLSX.utils.json_to_sheet(arrayData);
-      workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-    } else {
-      workbook = XLSX.read(buffer, { type: 'array', dense: true });
-    }
+    const workbook = await loadWorkbook(file);
 
     const firstSheetName = workbook.SheetNames[0];
     if (!firstSheetName) {
@@ -81,28 +107,7 @@ export const dataEngine: BrowserEngine = {
       const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
 
       try {
-        const buffer = await file.arrayBuffer();
-        let workbook: XLSX.WorkBook;
-
-        if (file.name.endsWith('.json')) {
-          const text = new TextDecoder().decode(buffer);
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(text);
-          } catch {
-            throw new EngineError('FILE_CORRUPT', `Invalid JSON in ${file.name}`);
-          }
-          const arrayData = Array.isArray(parsed) ? parsed : [parsed];
-          const sheet = XLSX.utils.json_to_sheet(arrayData);
-          workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, sheet, 'Data');
-        } else {
-          try {
-            workbook = XLSX.read(buffer, { type: 'array' });
-          } catch {
-            throw new EngineError('FILE_CORRUPT', `Could not read tabular spreadsheet ${file.name}`);
-          }
-        }
+        const workbook = await loadWorkbook(file);
 
         const sheetNames = workbook.SheetNames;
         if (sheetNames.length === 0) {

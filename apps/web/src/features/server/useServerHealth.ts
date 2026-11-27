@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { apiClient, type LimitsResponse } from './apiClient';
+import { useSettingsStore } from '@/features/settings/settingsStore';
 
 /** After this long without a healthy response, show the "server offline" error. */
 const GIVE_UP_MS = 90_000;
@@ -57,6 +58,8 @@ async function checkOnce(): Promise<boolean> {
       serverError: false,
       limits: limits ?? s.limits,
     }));
+    const settings = useSettingsStore.getState();
+    if (limits?.accessCodeRequired && !settings.accessCode) settings.promptAccessCode();
     return true;
   } catch {
     return false;

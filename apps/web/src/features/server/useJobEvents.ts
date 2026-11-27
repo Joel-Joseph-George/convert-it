@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { API_BASE_URL, apiClient, getHeaders, type JobSnapshotResponse } from './apiClient';
 import type { AppError } from './errorToView';
+import { readSseEvents } from './sse';
 
 type JobResult = NonNullable<JobSnapshotResponse['result']>;
 
@@ -103,57 +104,36 @@ export function useJobEvents({ jobId, onProgress, onDone, onError }: JobEventsOp
       if (res.status === 404) return { kind: 'error', error: JOB_LOST };
       if (!res.ok || !res.body) throw new Error(`SSE stream failed (${res.status})`);
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      for await (const { event: eventType, data: dataStr } of readSseEvents(res.body)) {
+        if (signal.aborted) break;
 
-      while (!signal.aborted) {
-        const { done, value } = await reader.read();
-        if (done) return null;
+        let data: Record<string, unknown>;
+        try {
+          data = JSON.parse(dataStr) as Record<string, unknown>;
+        } catch {
+          continue;
+        }
 
-        buffer += decoder.decode(value, { stream: true });
-        const messages = buffer.split('\n\n');
-        buffer = messages.pop() ?? '';
-
-        for (const rawMsg of messages) {
-          if (!rawMsg.trim() || rawMsg.startsWith(':')) continue; // heartbeat
-
-          let eventType = 'message';
-          let dataStr = '';
-          for (const line of rawMsg.split('\n')) {
-            if (line.startsWith('event:')) eventType = line.slice(6).trim();
-            else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
-          }
-          if (!dataStr) continue;
-
-          let data: Record<string, unknown>;
-          try {
-            data = JSON.parse(dataStr) as Record<string, unknown>;
-          } catch {
-            continue;
-          }
-
-          if (eventType === 'progress') {
+        if (eventType === 'progress') {
+          callbacksRef.current.onProgress?.(
+            typeof data.progress === 'number' ? data.progress : 0,
+            typeof data.stage === 'string' ? data.stage : null
+          );
+        } else if (eventType === 'done' && data.result) {
+          return { kind: 'done', result: data.result as JobResult };
+        } else if (eventType === 'error') {
+          return {
+            kind: 'error',
+            error: (data.error as AppError | undefined) ?? { code: 'CONVERSION_FAILED' },
+          };
+        } else if (eventType === 'status') {
+          const terminal = terminalFromSnapshot(data as Partial<JobSnapshotResponse>);
+          if (terminal) return terminal;
+          if (typeof data.progress === 'number' && data.progress > 0) {
             callbacksRef.current.onProgress?.(
-              typeof data.progress === 'number' ? data.progress : 0,
+              data.progress,
               typeof data.stage === 'string' ? data.stage : null
             );
-          } else if (eventType === 'done' && data.result) {
-            return { kind: 'done', result: data.result as JobResult };
-          } else if (eventType === 'error') {
-            return {
-              kind: 'error',
-              error: (data.error as AppError | undefined) ?? { code: 'CONVERSION_FAILED' },
-            };
-          } else if (eventType === 'status') {
-            const terminal = terminalFromSnapshot(data as Partial<JobSnapshotResponse>);
-            if (terminal) return terminal;
-            if (typeof data.progress === 'number' && data.progress > 0) {
-              callbacksRef.current.onProgress?.(
-                data.progress,
-                typeof data.stage === 'string' ? data.stage : null
-              );
-            }
           }
         }
       }

@@ -11,7 +11,7 @@ export interface ErrorViewModel {
   message: string;
   severity: "error" | "warning";
   actionLabel?: string;
-  actionKind?: "clear" | "retry" | "audio-only" | "try-another" | "options";
+  actionKind?: "clear" | "retry" | "audio-only" | "try-another" | "options" | "access-code";
 }
 
 export function errorToView(error: AppError | Error | string): ErrorViewModel {
@@ -276,6 +276,8 @@ export function errorToView(error: AppError | Error | string): ErrorViewModel {
         title: "Access code required",
         message: defaultMsg || "This server requires an access code for server tools.",
         severity: "error",
+        actionLabel: "Enter code",
+        actionKind: "access-code",
       };
 
     case "CONVERSION_FAILED":

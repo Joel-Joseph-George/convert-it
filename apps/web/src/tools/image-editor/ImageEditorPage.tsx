@@ -42,6 +42,7 @@ import {
   type Transform,
 } from './render';
 import { clearEditorHandoff, peekEditorHandoff } from './handoff';
+import { usePasteFiles } from '@/lib/usePasteFiles';
 
 type CropMode = { kind: 'aspect'; id: string } | { kind: 'passport'; id: string };
 
@@ -120,6 +121,12 @@ export default function ImageEditorPage(): React.ReactElement {
   React.useEffect(() => {
     if (initial?.file) void loadFile(initial.file);
   }, [initial, loadFile]);
+
+  // Paste a copied photo or screenshot to open it.
+  usePasteFiles((files) => {
+    const image = files.find((f) => f.type.startsWith('image/'));
+    if (image) void loadFile(image);
+  });
 
   // A new image or a new ratio starts from the largest centred crop.
   React.useEffect(() => {

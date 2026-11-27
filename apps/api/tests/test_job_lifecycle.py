@@ -240,3 +240,38 @@ async def test_upload_disk_write_failure_returns_clean_error(
     assert resp.status_code == 500
     assert resp.json()["error"]["code"] == "CONVERSION_FAILED"
     assert [p for p in tmp_path.iterdir() if p.is_dir()] == []
+
+
+@pytest.mark.asyncio
+async def test_download_token_when_access_code_set(
+    memory_app: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "ACCESS_CODE", "letmein")
+    auth = {"X-Access-Code": "letmein"}
+    transport = ASGITransport(app=memory_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        files = {"file": ("note.txt", io.BytesIO(b"token test"), "text/plain")}
+        data = {"toolId": "echo-convert", "options": "{}"}
+        resp = await client.post("/api/jobs/convert", data=data, files=files, headers=auth)
+        assert resp.status_code == 202
+        job_id = resp.json()["jobId"]
+
+        result = None
+        for _ in range(30):
+            snapshot = (await client.get(f"/api/jobs/{job_id}", headers=auth)).json()
+            if snapshot["status"] == "succeeded":
+                result = snapshot["result"]
+                break
+            await asyncio.sleep(0.05)
+        assert result is not None
+        token = result["downloadToken"]
+        assert token
+
+        # A plain link (no header) needs the token
+        no_auth = await client.get(f"/api/jobs/{job_id}/download")
+        assert no_auth.status_code == 401
+        bad = await client.get(f"/api/jobs/{job_id}/download", params={"token": token + "0"})
+        assert bad.status_code == 401
+        good = await client.get(f"/api/jobs/{job_id}/download", params={"token": token})
+        assert good.status_code == 200
+        assert good.content == b"token test"

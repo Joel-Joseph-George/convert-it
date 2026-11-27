@@ -70,6 +70,7 @@ interface YouTubeState {
     sizeBytes: number;
     mime: string;
     expiresAt: string;
+    downloadToken?: string | null;
   } | null;
   error: AppError | null;
 
@@ -93,6 +94,7 @@ interface YouTubeState {
     sizeBytes: number;
     mime: string;
     expiresAt: string;
+    downloadToken?: string | null;
   }) => void;
   setError: (error: AppError) => void;
   /** Re-run whichever step failed: the download if info is loaded, else the info lookup. */

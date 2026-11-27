@@ -136,10 +136,13 @@ Retrieves the current state and progress snapshot of a job.
     "filename": "converted_report.txt",
     "sizeBytes": 1024,
     "mime": "text/plain",
-    "expiresAt": "2026-02-19T06:15:03Z"
+    "expiresAt": "2026-02-19T06:15:03Z",
+    "downloadToken": null
   }
 }
 ```
+
+`downloadToken` is only set when `ACCESS_CODE` is configured: a signed token, valid until the result expires, for `GET /download?token=...` (see below).
 
 ---
 
@@ -175,6 +178,8 @@ Cancels a queued or running job, terminates external subprocess groups, and dele
 ### 7. `GET /api/jobs/{id}/download`
 
 Streams the completed converted file. Schedules directory deletion 60 seconds after the initial complete download.
+
+When `ACCESS_CODE` is set, send either the `X-Access-Code` header or `?token=<result.downloadToken>`. The token lets a plain link or `window.location` navigation download the file, since those can't send headers.
 
 **Response `200 OK`**:
 - Headers:

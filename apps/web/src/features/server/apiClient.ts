@@ -60,6 +60,8 @@ export interface JobSnapshotResponse {
     sizeBytes: number;
     mime: string;
     expiresAt: string;
+    /** Signed token for a plain download link when the server needs an access code. */
+    downloadToken?: string | null;
   } | null;
 }
 
@@ -79,18 +81,25 @@ export class ApiClientError extends Error implements AppError {
   }
 }
 
-export function getHeaders(contentType?: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-  };
-  if (contentType) {
-    headers['Content-Type'] = contentType;
-  }
+/** The X-Access-Code header, if the user has entered a code. */
+export function accessCodeHeaders(): Record<string, string> {
   const accessCode = useSettingsStore.getState().accessCode;
-  if (accessCode) {
-    headers['X-Access-Code'] = accessCode;
+  return accessCode ? { 'X-Access-Code': accessCode } : {};
+}
+
+/** Open the access-code dialog when the server says one is needed (or was wrong). */
+export function promptOnAuthError(error: unknown): void {
+  if (error && typeof error === 'object' && 'code' in error && error.code === 'AUTH_REQUIRED') {
+    useSettingsStore.getState().promptAccessCode();
   }
-  return headers;
+}
+
+export function getHeaders(contentType?: string): Record<string, string> {
+  return {
+    Accept: 'application/json',
+    ...(contentType ? { 'Content-Type': contentType } : {}),
+    ...accessCodeHeaders(),
+  };
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -106,6 +115,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
       message: res.statusText || 'Request failed',
       retryable: res.status >= 500,
     };
+    promptOnAuthError(appErr);
     throw new ApiClientError(appErr);
   }
   return (await res.json()) as T;
@@ -170,7 +180,9 @@ export const apiClient = {
     return handleResponse<{ status: string }>(res);
   },
 
-  getDownloadUrl(jobId: string): string {
-    return `${API_BASE_URL}/api/jobs/${jobId}/download`;
+  /** Download link; pass the job's downloadToken so it works without the access-code header. */
+  getDownloadUrl(jobId: string, downloadToken?: string | null): string {
+    const url = `${API_BASE_URL}/api/jobs/${jobId}/download`;
+    return downloadToken ? `${url}?token=${encodeURIComponent(downloadToken)}` : url;
   },
 };

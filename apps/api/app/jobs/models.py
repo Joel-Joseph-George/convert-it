@@ -20,6 +20,9 @@ class JobResult(BaseModel):
     sizeBytes: int
     mime: str
     expiresAt: str
+    # Signed, expiring token for GET /download when ACCESS_CODE is set, so a plain
+    # link (which can't send X-Access-Code) can still fetch the file.
+    downloadToken: str | None = None
 
 
 class JobSnapshot(BaseModel):

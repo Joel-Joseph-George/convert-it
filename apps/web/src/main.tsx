@@ -36,3 +36,13 @@ if (rootElement && !rootElement.innerHTML) {
     </React.StrictMode>
   );
 }
+
+// Installable PWA: offline shell, cached vendor assets and "Share → ConvertIt".
+// Production only, so the dev server never serves stale modules from the cache.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error: unknown) => {
+      console.warn('Service worker registration failed', error);
+    });
+  });
+}

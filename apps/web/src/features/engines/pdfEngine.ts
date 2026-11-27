@@ -5,7 +5,7 @@ import { createZipArchive } from './zipUtil';
 
 // Configure local worker source for pdfjs-dist (zero third-party CDN requests)
 if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `${__VENDOR__.pdfjs}/pdf.worker.min.mjs`;
 }
 
 const A4: [number, number] = [595.28, 841.89];

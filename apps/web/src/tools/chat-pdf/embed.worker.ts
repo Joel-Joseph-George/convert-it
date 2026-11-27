@@ -21,14 +21,14 @@ async function loadEngine() {
   env.cacheKey = CACHE_KEY;
   env.allowRemoteModels = true;
   env.allowLocalModels = true;
-  env.localModelPath = '/vendor/models/';
+  env.localModelPath = __VENDOR__.models + '/';
   const wasm = env.backends.onnx.wasm;
   if (wasm) {
     // Keep the runtime's platform choice while serving both files from this site.
     const baseline =
       typeof wasm.wasmPaths === 'object' && String(wasm.wasmPaths.mjs).endsWith('threaded.mjs');
     const name = baseline ? 'ort-wasm-simd-threaded' : 'ort-wasm-simd-threaded.asyncify';
-    const base = new URL('/vendor/onnx/' + name, self.location.origin).href;
+    const base = new URL(`${__VENDOR__.onnx}/${name}`, self.location.origin).href;
     wasm.wasmPaths = { mjs: base + '.mjs', wasm: base + '.wasm' };
     wasm.numThreads = 1;
   }

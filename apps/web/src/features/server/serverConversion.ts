@@ -1,5 +1,4 @@
-import { API_BASE_URL, apiClient } from './apiClient';
-import { useSettingsStore } from '@/features/settings/settingsStore';
+import { API_BASE_URL, accessCodeHeaders, apiClient, promptOnAuthError } from './apiClient';
 import { AppError } from './errorToView';
 
 export async function runServerConversion(
@@ -23,9 +22,8 @@ export async function runServerConversion(
     xhr.open('POST', `${API_BASE_URL}/api/jobs/convert`);
     xhr.setRequestHeader('Accept', 'application/json');
 
-    const accessCode = useSettingsStore.getState().accessCode;
-    if (accessCode) {
-      xhr.setRequestHeader('X-Access-Code', accessCode);
+    for (const [name, value] of Object.entries(accessCodeHeaders())) {
+      xhr.setRequestHeader(name, value);
     }
 
     if (signal) {
@@ -58,6 +56,7 @@ export async function runServerConversion(
             code: 'CONVERSION_FAILED',
             message: xhr.statusText,
           };
+          promptOnAuthError(appErr);
           reject(appErr);
         } catch {
           reject({
@@ -126,14 +125,8 @@ export async function runServerConversion(
   }
 
   // 3. Download converted result blob
-  const downloadHeaders: Record<string, string> = {};
-  const accessCode = useSettingsStore.getState().accessCode;
-  if (accessCode) {
-    downloadHeaders['X-Access-Code'] = accessCode;
-  }
-
   const downloadRes = await fetch(apiClient.getDownloadUrl(jobId), {
-    headers: downloadHeaders,
+    headers: accessCodeHeaders(),
     signal,
   });
 

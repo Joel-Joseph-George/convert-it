@@ -55,7 +55,6 @@ export interface QueueState {
     toolId: string,
     defaults: Record<string, string | number | boolean>
   ) => void;
-  cancelItem: (toolId: string, itemId: string) => void;
   /** Re-queue one failed/cancelled item; runs after the current batch if one is running. */
   retryItem: (toolId: string, itemId: string) => void;
   /** Chained steps after the tool's own step, per tool. */
@@ -213,15 +212,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         },
       };
     });
-  },
-
-  cancelItem: (toolId: string, itemId: string) => {
-    const current = get().items[toolId] || [];
-    const item = current.find((i) => i.id === itemId);
-    if (item?.abortController) {
-      item.abortController.abort();
-    }
-    get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
   retryItem: (toolId, itemId) => {

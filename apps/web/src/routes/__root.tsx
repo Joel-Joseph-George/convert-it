@@ -2,6 +2,7 @@ import * as React from 'react';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { TopBar } from '@/components/layout/TopBar';
 import { Footer } from '@/components/layout/Footer';
+import { AccessCodeDialog } from '@/features/settings/AccessCodeDialog';
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -16,6 +17,7 @@ function RootComponent(): React.ReactElement {
         <Outlet />
       </main>
       <Footer />
+      <AccessCodeDialog />
     </div>
   );
 }
