@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { EngineBadge } from "@/components/shared/EngineBadge";
 import { ErrorAlert } from "@/components/shared/ErrorAlert";
@@ -31,7 +31,8 @@ const failure = (error: unknown) =>
 const progress = (value: string) => useChat.setState({ progress: value });
 
 export default function ChatPdfPage() {
-  const { isWakingUp, serverError, limits } = useServerHealth();
+  const { isWakingUp, serverError, limits, retry: retryHealth } = useServerHealth();
+  const navigate = useNavigate();
   const unavailable = limits?.serverTools?.["chat-pdf"] === false;
   const { file, status, messages, progress: stage } = useChat();
   const session = useRef<DocumentSession | null>(null);
@@ -261,6 +262,7 @@ export default function ChatPdfPage() {
             code: "SERVER_OFFLINE",
             message: "The server is currently offline or unreachable.",
           }}
+          onAction={retryHealth}
         />
       )}
       {unavailable && (
@@ -270,6 +272,7 @@ export default function ChatPdfPage() {
             message:
               "Chat is unavailable because the server has no Gemini API key configured.",
           }}
+          onAction={() => void navigate({ to: "/tools" })}
         />
       )}
       {!file && !clearing && !unavailable && (
@@ -316,8 +319,10 @@ export default function ChatPdfPage() {
       {apiError && (
         <ErrorAlert
           error={apiError}
-          onAction={() => {
-            if (lastFailedQuestion) {
+          onAction={(kind) => {
+            if (kind === "try-another") {
+              void navigate({ to: "/tools" });
+            } else if (lastFailedQuestion) {
               void submit(undefined, lastFailedQuestion);
             }
           }}

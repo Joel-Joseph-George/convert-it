@@ -123,6 +123,17 @@ app = FastAPI(
 )
 
 
+_RATE_LIMIT_EXEMPT_PATHS = ("/api/health", "/api/limits")
+
+
+def _is_rate_limit_exempt(request: Request) -> bool:
+    path = request.url.path
+    if path in _RATE_LIMIT_EXEMPT_PATHS:
+        return True
+    # GET /api/jobs/{id}, /api/jobs/{id}/events, /api/jobs/{id}/download
+    return request.method == "GET" and path.startswith("/api/jobs/")
+
+
 # Security and Request ID Middleware
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -130,8 +141,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         req_id = request.headers.get("x-request-id") or str(uuid.uuid4())
         request.state.request_id = req_id
 
-        # General per-IP request rate limit check
-        if hasattr(request.app.state, "store"):
+        # General per-IP request rate limit check. Health checks and job status
+        # reads (polling, SSE, download) are exempt: a single conversion polls about
+        # once a second and would otherwise exhaust the per-minute budget by itself.
+        if hasattr(request.app.state, "store") and not _is_rate_limit_exempt(request):
             store: JobStore = request.app.state.store
             client_ip = get_client_ip(request)
             allowed, _count, retry_after = await store.check_rate_limit(

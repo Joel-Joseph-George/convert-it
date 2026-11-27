@@ -215,6 +215,34 @@ async def test_server_draining_behavior(memory_app: FastAPI) -> None:
 
 
 @pytest.mark.asyncio
+async def test_upload_disk_write_failure_returns_clean_error(
+    memory_app: FastAPI, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A disk error while saving the upload returns CONVERSION_FAILED and leaves no job dir (#9)."""
+    import builtins
+
+    real_open = builtins.open
+
+    def failing_open(file, mode="r", *args, **kwargs):  # type: ignore[no-untyped-def]
+        if "wb" in mode and str(file).startswith(str(tmp_path)):
+            raise OSError("No space left on device")
+        return real_open(file, mode, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "open", failing_open)
+
+    transport = ASGITransport(app=memory_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        files = {"file": ("test_doc.txt", io.BytesIO(b"hello"), "text/plain")}
+        resp = await client.post(
+            "/api/jobs/convert", files=files, data={"toolId": "echo-convert", "options": "{}"}
+        )
+
+    assert resp.status_code == 500
+    assert resp.json()["error"]["code"] == "CONVERSION_FAILED"
+    assert [p for p in tmp_path.iterdir() if p.is_dir()] == []
+
+
+@pytest.mark.asyncio
 async def test_download_token_when_access_code_set(
     memory_app: FastAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:

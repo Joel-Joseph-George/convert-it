@@ -15,7 +15,7 @@ import { YouTubeDoneCard } from '@/features/youtube/YouTubeDoneCard';
 
 /** YouTube download flow. This used to be the home page hero. */
 export default function YouTubePage(): React.ReactElement {
-  const { isWakingUp, serverError, limits } = useServerHealth();
+  const { isWakingUp, serverError, limits, retry: retryHealth } = useServerHealth();
   const status = useYouTubeStore((s) => s.status);
   const error = useYouTubeStore((s) => s.error);
   const url = useYouTubeStore((s) => s.url);
@@ -77,6 +77,7 @@ export default function YouTubePage(): React.ReactElement {
             message: 'The server is not responding. Please check your connection or try again later.',
             retryable: true,
           }}
+          onAction={retryHealth}
         />
       )}
 
