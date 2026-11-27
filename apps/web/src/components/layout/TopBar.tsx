@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ArrowLeftRight, LayoutGrid, Search } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { InstallButton } from '@/features/pwa/InstallButton';
 import { Button } from '@/components/ui/button';
 
 export const TopBar: React.FC = () => {
@@ -26,7 +27,7 @@ export const TopBar: React.FC = () => {
           </span>
         </Link>
 
-        {/* Right Actions: All tools, Search, Theme Toggle */}
+        {/* Right Actions: All tools, Search, Install (when available), Theme Toggle */}
         <div className="flex items-center gap-1 sm:gap-2">
           <Link
             to="/tools"
@@ -52,6 +53,8 @@ export const TopBar: React.FC = () => {
               <Search className="h-4 w-4 stroke-[1.75]" />
             </Button>
           </Link>
+
+          <InstallButton />
 
           <ThemeToggle />
         </div>
