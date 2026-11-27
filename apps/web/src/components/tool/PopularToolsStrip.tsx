@@ -10,6 +10,10 @@ import {
   Image as ImageIcon,
   Minimize2,
   File,
+  FileDown,
+  LayoutGrid,
+  PenLine,
+  Eraser,
 } from 'lucide-react';
 import { getPopularTools } from '@/features/registry/tools';
 import { Button } from '@/components/ui/button';
@@ -26,6 +30,14 @@ function getPopularToolIcon(id: string): React.ComponentType<{ className?: strin
       return FileText;
     case 'image-compress':
       return Minimize2;
+    case 'compress-pdf':
+      return FileDown;
+    case 'organize-pdf':
+      return LayoutGrid;
+    case 'sign-pdf':
+      return PenLine;
+    case 'remove-background':
+      return Eraser;
     case 'audio-convert':
       return Music;
     case 'excel-to-csv':

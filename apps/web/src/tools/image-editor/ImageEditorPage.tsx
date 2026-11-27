@@ -24,7 +24,9 @@ import {
   ASPECT_PRESETS,
   PASSPORT_PRESETS,
   PRINT_DPI,
+  SOCIAL_PRESETS,
   getPassportPreset,
+  getSocialPreset,
   mmToPx,
 } from './presets';
 import {
@@ -44,11 +46,21 @@ import {
 import { clearEditorHandoff, peekEditorHandoff } from './handoff';
 import { usePasteFiles } from '@/lib/usePasteFiles';
 
-type CropMode = { kind: 'aspect'; id: string } | { kind: 'passport'; id: string };
+type CropMode =
+  | { kind: 'aspect'; id: string }
+  | { kind: 'social'; id: string }
+  | { kind: 'passport'; id: string };
+
+const CROP_TABS = [
+  { kind: 'aspect', label: 'Aspect ratio' },
+  { kind: 'social', label: 'Social' },
+  { kind: 'passport', label: 'Passport' },
+] as const;
 
 const ACCEPTED = ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'avif', 'gif', 'bmp'];
 const MAX_FILE_MB = 50;
 const DEFAULT_PASSPORT_ID = 'in';
+const DEFAULT_SOCIAL_ID = 'ig-square';
 const MAX_OUTPUT_PX = 8000;
 const FORMATS: { value: OutputFormat; label: string }[] = [
   { value: 'jpg', label: 'JPG' },
@@ -92,9 +104,12 @@ export default function ImageEditorPage(): React.ReactElement {
   const changeInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const passport = mode.kind === 'passport' ? getPassportPreset(mode.id) : undefined;
+  const social = mode.kind === 'social' ? getSocialPreset(mode.id) : undefined;
   const ratio = passport
     ? passport.widthMm / passport.heightMm
-    : (ASPECT_PRESETS.find((p) => p.id === mode.id)?.ratio ?? null);
+    : social
+      ? social.width / social.height
+      : (ASPECT_PRESETS.find((p) => p.id === mode.id)?.ratio ?? null);
 
   const loadFile = React.useCallback(async (file: File) => {
     setLoading(true);
@@ -140,10 +155,16 @@ export default function ImageEditorPage(): React.ReactElement {
 
   const cropW = Math.max(1, Math.round(crop.w));
   const cropH = Math.max(1, Math.round(crop.h));
-  const outW = passport ? mmToPx(passport.widthMm) : Math.min(outWidth ?? cropW, MAX_OUTPUT_PX);
+  const outW = passport
+    ? mmToPx(passport.widthMm)
+    : social
+      ? social.width
+      : Math.min(outWidth ?? cropW, MAX_OUTPUT_PX);
   const outH = passport
     ? mmToPx(passport.heightMm)
-    : Math.max(1, Math.min(Math.round((outW * crop.h) / crop.w), MAX_OUTPUT_PX));
+    : social
+      ? social.height
+      : Math.max(1, Math.min(Math.round((outW * crop.h) / crop.w), MAX_OUTPUT_PX));
   const background = format === 'jpg' || passport ? '#ffffff' : undefined;
   const maxBytes = Number(maxKB) > 0 ? Number(maxKB) * 1024 : undefined;
   const q = quality / 100;
@@ -203,7 +224,7 @@ export default function ImageEditorPage(): React.ReactElement {
     try {
       const canvas = renderOutput(source, crop, outW, outH, background);
       const res = await encode(canvas, format, q, maxBytes);
-      const suffix = passport ? `passport-${passport.id}` : 'edited';
+      const suffix = passport ? `passport-${passport.id}` : social ? social.id : 'edited';
       downloadBlob(res.blob, `${baseName(fileName)}-${suffix}.${format}`);
     } catch (err) {
       setError((err as Error).message);
@@ -356,20 +377,27 @@ export default function ImageEditorPage(): React.ReactElement {
           {/* Controls */}
           <aside className="space-y-4">
             <Panel title="Crop">
-              <div className="grid grid-cols-2 rounded-btn bg-muted p-0.5 text-xs font-medium">
-                {(['aspect', 'passport'] as const).map((k) => (
+              <div className="grid grid-cols-3 rounded-btn bg-muted p-0.5 text-xs font-medium">
+                {CROP_TABS.map(({ kind: k, label }) => (
                   <button
                     key={k}
                     type="button"
+                    aria-pressed={mode.kind === k}
                     onClick={() =>
-                      setMode(k === 'aspect' ? { kind: 'aspect', id: 'free' } : { kind: 'passport', id: DEFAULT_PASSPORT_ID })
+                      setMode(
+                        k === 'aspect'
+                          ? { kind: 'aspect', id: 'free' }
+                          : k === 'social'
+                            ? { kind: 'social', id: DEFAULT_SOCIAL_ID }
+                            : { kind: 'passport', id: DEFAULT_PASSPORT_ID }
+                      )
                     }
                     className={cn(
                       'h-8 rounded-[8px] transition-colors',
                       mode.kind === k ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    {k === 'aspect' ? 'Aspect ratio' : 'Passport'}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -382,6 +410,21 @@ export default function ImageEditorPage(): React.ReactElement {
                     </Chip>
                   ))}
                 </div>
+              ) : mode.kind === 'social' ? (
+                <label className="block space-y-1.5">
+                  <span className="text-xs text-muted-foreground">Post or banner</span>
+                  <select
+                    value={mode.id}
+                    onChange={(e) => setMode({ kind: 'social', id: e.target.value })}
+                    className="h-9 w-full rounded-btn border border-input bg-card px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {SOCIAL_PRESETS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label} · {p.width}×{p.height}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : (
                 <div className="space-y-2">
                   <label className="block space-y-1.5">
@@ -410,7 +453,17 @@ export default function ImageEditorPage(): React.ReactElement {
             </Panel>
 
             <Panel title="Size">
-              {passport ? (
+              {social ? (
+                <div className="space-y-1 text-xs">
+                  <p className="font-mono text-foreground">
+                    {outW} × {outH} px
+                  </p>
+                  <p className="text-muted-foreground">Exact size for {social.label}.</p>
+                  {cropW < outW && (
+                    <p className="text-[11px] text-warning">The crop is smaller than this, so it will look softer.</p>
+                  )}
+                </div>
+              ) : passport ? (
                 <div className="space-y-1 text-xs">
                   <p className="font-mono text-foreground">
                     {outW} × {outH} px

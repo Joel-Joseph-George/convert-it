@@ -1,4 +1,17 @@
+import { getToolById } from '../registry/tools';
 import type { Step } from './conversion';
+
+/** Drop secret options (passwords) so they never reach browser storage. */
+export function withoutSecrets<T extends Step>(step: T): T {
+  const secrets = new Set(
+    (getToolById(step.toolId)?.options ?? []).filter((o) => o.secret).map((o) => o.id)
+  );
+  if (secrets.size === 0) return step;
+  return {
+    ...step,
+    options: Object.fromEntries(Object.entries(step.options).filter(([id]) => !secrets.has(id))),
+  };
+}
 
 export interface Preset extends Step {
   name: string;
@@ -75,7 +88,7 @@ async function read<T>(
 export const listPresets = (): Promise<Preset[]> =>
   read('presets', (store) => store.getAll());
 export const savePreset = (preset: Preset) =>
-  write(['presets'], (tx) => tx.objectStore('presets').put(preset));
+  write(['presets'], (tx) => tx.objectStore('presets').put(withoutSecrets(preset)));
 export const deletePreset = (preset: Preset) =>
   write(['presets'], (tx) =>
     tx.objectStore('presets').delete([preset.toolId, preset.name])
@@ -127,7 +140,7 @@ export function rememberRun(steps: Step[], files: File[]) {
     const entry = history.add({
       created: Date.now(),
       names: files.map((file) => file.name),
-      steps,
+      steps: steps.map(withoutSecrets),
       hasInputs: keep,
     });
     entry.onsuccess = () => {

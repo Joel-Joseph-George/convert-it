@@ -12,6 +12,7 @@ import { ChainEditor, ConversionLibrary } from '@/components/tool/ConversionWork
 import { defaultStep, nextTools, type Step } from '@/features/workflows/conversion';
 import { FileQueue } from '@/components/tool/FileQueue';
 import { DataPreviewTable } from '@/components/tool/DataPreviewTable';
+import { MetadataPreview } from '@/components/tool/MetadataPreview';
 import { Button } from '@/components/ui/button';
 import { useServerHealth } from '@/features/server/useServerHealth';
 import { ServerWakeBanner } from '@/features/server/ServerWakeBanner';
@@ -28,6 +29,8 @@ const EMPTY_STEPS: Step[] = [];
 const ChatPdfPage = React.lazy(() => import('@/tools/chat-pdf/ChatPdfPage'));
 const ImageEditorPage = React.lazy(() => import('@/tools/image-editor/ImageEditorPage'));
 const YouTubePage = React.lazy(() => import('@/tools/youtube/YouTubePage'));
+const OrganizePdfPage = React.lazy(() => import('@/tools/pdf-pages/OrganizePdfPage'));
+const SignPdfPage = React.lazy(() => import('@/tools/pdf-pages/SignPdfPage'));
 
 function ToolPage(): React.ReactElement {
   const { toolId } = Route.useParams();
@@ -36,6 +39,12 @@ function ToolPage(): React.ReactElement {
   }
   if (toolId === 'image-editor') {
     return <React.Suspense fallback={<p role="status">Opening editor…</p>}><ImageEditorPage /></React.Suspense>;
+  }
+  if (toolId === 'organize-pdf') {
+    return <React.Suspense fallback={<p role="status">Opening PDF organizer…</p>}><OrganizePdfPage /></React.Suspense>;
+  }
+  if (toolId === 'sign-pdf') {
+    return <React.Suspense fallback={<p role="status">Opening PDF signer…</p>}><SignPdfPage /></React.Suspense>;
   }
   if (toolId === 'youtube') {
     return <React.Suspense fallback={<p role="status">Opening downloader…</p>}><YouTubePage /></React.Suspense>;
@@ -210,6 +219,10 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
       />
 
       {/* Data Preview Table for Tabular Data Tools */}
+      {tool.id === 'remove-metadata' && toolItems.length > 0 && (
+        <MetadataPreview files={toolItems.map((item) => item.file)} />
+      )}
+
       {tool.category === 'data' && toolItems.length > 0 && (
         <DataPreviewTable file={toolItems[0]?.file} />
       )}

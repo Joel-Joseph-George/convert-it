@@ -44,6 +44,7 @@ The home page leads with a photo editor (`/tools/image-editor`). Drop a photo on
 | Feature | Details |
 |---|---|
 | **Crop** | Drag handles or arrow keys. Presets: Free, 1:1, 4:5, 3:2, 16:9, 9:16. |
+| **Social sizes** | Exact sizes for Instagram posts and stories, X/Twitter, Facebook, LinkedIn, YouTube thumbnails, banners and profile pictures. |
 | **Passport photos** | India, US, UK, Schengen/EU, Canada and Australia sizes, with a face-guide oval sized to each country's head-height rule. Output at exact pixel size for 300 DPI. |
 | **Print sheet** | Tiles as many passport copies as fit on a 6×4 in sheet, with cut lines. |
 | **Rotate / flip / resize** | 90° rotation, horizontal and vertical flip, resize by pixels or percentage. |
@@ -136,7 +137,7 @@ flowchart TD
 
 ## 🛠️ Supported Tools Catalogue
 
-The directory contains **32 tools**. The home page leads with the Image Editor; the YouTube downloader is listed under Video.
+The directory contains **40 tools**. The home page leads with the Image Editor; the YouTube downloader is listed under Video.
 
 | Category | Tool | Input Format | Output Format | Engine |
 |---|---|---|---|---|
@@ -147,9 +148,11 @@ The directory contains **32 tools**. The home page leads with the Image Editor; 
 | **Image** | Image Editor | JPG, PNG, WebP, AVIF, GIF, BMP, HEIC | JPG, PNG, WebP (crop, resize, rotate, passport, target KB) | In your browser (Canvas) |
 | **Image** | Image Converter | PNG, JPG, WEBP, AVIF | PNG, JPG, WEBP | In your browser (Canvas) |
 | **Image** | HEIC to JPG | HEIC, HEIF | JPG, PNG | In your browser (heic2any) |
-| **Image** | Compress Image | PNG, JPG, WEBP | JPG, WebP, PNG at Low / Balanced / High; never larger than the original | In your browser (Canvas) |
+| **Image** | Compress Image | PNG, JPG, WEBP | JPG, WebP, PNG at Low / Balanced / High, or under a target size in KB; never larger than the original | In your browser (Canvas) |
 | **Image** | SVG to PNG | SVG | PNG, WebP (1×, 2×, 4×) | In your browser (Canvas) |
 | **Image** | Resize Image | Image file | Resized image | In your browser (Canvas) |
+| **Image** | Remove Background | Photos of people (JPG, PNG, WebP) | PNG/WebP with transparency, or a white/black background | In your browser (MODNet via ONNX) |
+| **Image** | Remove Photo Metadata | JPG, PNG, WebP | Same format without EXIF/GPS/XMP, pixels untouched | In your browser |
 | **PDF** | Rotate PDF | PDF | Rotated pages | In your browser (pdf-lib) |
 | **PDF** | Remove PDF Pages | PDF + page list (e.g. `2, 5-7`) | PDF | In your browser (pdf-lib) |
 | **PDF** | PDF to Text | Selectable PDF text | TXT | In your browser (pdfjs-dist) |
@@ -157,6 +160,12 @@ The directory contains **32 tools**. The home page leads with the Image Editor; 
 | **PDF** | Split / Extract PDF | PDF + range (e.g. `1-3, 5, 8-`) | One PDF of those pages, or `all` → one PDF per page (ZIP) | In your browser (pdf-lib) |
 | **PDF** | PDF to Images | PDF document | PNG or JPEG per page at 72/150/300 DPI (ZIP for multi-page) | In your browser (pdfjs-dist) |
 | **PDF** | Images to PDF | PNG, JPG, WebP images | Multi-page PDF, fit to A4 or original size | In your browser (pdf-lib) |
+| **PDF** | Organize PDF Pages | PDF | Pages reordered (drag and drop), rotated or deleted | In your browser (pdf.js + pdf-lib) |
+| **PDF** | Compress PDF | PDF | Smaller PDF: photos re-compressed, text kept | In your browser (pdf-lib) |
+| **PDF** | OCR PDF | Scanned PDF | Searchable PDF (invisible text layer) or TXT; English | In your browser (tesseract.js) |
+| **PDF** | Sign PDF | PDF | Drawn or typed signature, text and date placed on any page | In your browser (pdf.js + pdf-lib) |
+| **PDF** | Protect PDF | PDF + password | AES-256 encrypted PDF | In your browser (qpdf WASM) |
+| **PDF** | Unlock PDF | Protected PDF + its password | PDF without a password | In your browser (qpdf WASM) |
 | **Data** | Excel to JSON | Workbook | JSON (first sheet, or all sheets keyed by name) | In your browser (SheetJS) |
 | **Data** | JSON to Excel | JSON records | XLSX | In your browser (SheetJS) |
 | **Data** | CSV to Excel | CSV | XLSX | In your browser (SheetJS) |

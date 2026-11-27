@@ -1,4 +1,5 @@
 import { TOOLS } from "@/features/registry/tools";
+import { CUSTOM_PAGE_TOOLS } from "@/features/workflows/conversion";
 import type { ToolDefinition } from "@/features/registry/types";
 import { isYouTubeUrl } from "@/features/youtube/url";
 
@@ -57,7 +58,14 @@ export function pickToolForFiles(files: File[]): ToolDefinition | null {
   const first = files[0];
   if (!first) return null;
   const ext = extensionOf(first.name);
-  return TOOLS.find((tool) => tool.inputs.extensions.includes(ext)) ?? null;
+  // Tools with their own page can't take a queued file (the image editor has a handoff).
+  return (
+    TOOLS.find(
+      (tool) =>
+        tool.inputs.extensions.includes(ext) &&
+        (tool.id === 'image-editor' || !CUSTOM_PAGE_TOOLS.has(tool.id))
+    ) ?? null
+  );
 }
 
 /** Files the chosen tool can take. */

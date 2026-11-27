@@ -18,6 +18,63 @@ function getMimeFromFormat(format: string): string {
 
 const COMPRESSION_QUALITY: Record<string, number> = { low: 0.9, balanced: 0.75, high: 0.55 };
 
+/**
+ * Encode under `maxBytes`: binary-search the quality (JPG/WebP), then shrink
+ * the image in 15% steps if even low quality (or lossless PNG) is too big.
+ * Returns the smallest attempt if the target can't be reached.
+ */
+export async function encodeToSize(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+  mime: string,
+  maxBytes: number
+): Promise<{ blob: Blob; metTarget: boolean }> {
+  const render = async (w: number, h: number, quality: number): Promise<Blob> => {
+    const canvas = new OffscreenCanvas(w, h);
+    const c2d = canvas.getContext('2d');
+    if (!c2d) throw new EngineError('CONVERSION_FAILED', 'Failed to create 2D canvas context.');
+    if (mime === 'image/jpeg') {
+      c2d.fillStyle = '#FFFFFF';
+      c2d.fillRect(0, 0, w, h);
+    }
+    c2d.drawImage(source, 0, 0, w, h);
+    return canvas.convertToBlob({ type: mime, quality });
+  };
+  const lossy = mime !== 'image/png';
+  let smallest: Blob | null = null;
+  let w = width;
+  let h = height;
+  for (let step = 0; step < 12; step++) {
+    if (!lossy) {
+      const blob = await render(w, h, 1);
+      if (blob.size <= maxBytes) return { blob, metTarget: true };
+      if (!smallest || blob.size < smallest.size) smallest = blob;
+    } else {
+      let lo = 0.1;
+      let hi = 0.92;
+      let best: Blob | null = null;
+      for (let i = 0; i < 7; i++) {
+        const q = (lo + hi) / 2;
+        const blob = await render(w, h, q);
+        if (blob.size <= maxBytes) {
+          best = blob;
+          lo = q;
+        } else {
+          hi = q;
+          if (!smallest || blob.size < smallest.size) smallest = blob;
+        }
+      }
+      if (best) return { blob: best, metTarget: true };
+    }
+    if (w <= 16 || h <= 16) break;
+    w = Math.max(1, Math.round(w * 0.85));
+    h = Math.max(1, Math.round(h * 0.85));
+  }
+  if (!smallest) throw new EngineError('CONVERSION_FAILED', 'Could not encode this image.');
+  return { blob: smallest, metTarget: false };
+}
+
 interface Decoded {
   source: CanvasImageSource;
   width: number;
@@ -122,8 +179,19 @@ export const imageEngine: BrowserEngine = {
 
         // Draw to Canvas
         let blob: Blob | null = null;
+        const targetKB = Number(options.targetKB);
 
-        if (typeof OffscreenCanvas !== 'undefined') {
+        if (compressionLevel === 'target' && targetKB > 0 && typeof OffscreenCanvas !== 'undefined') {
+          const encoded = await encodeToSize(bitmap.source, targetWidth, targetHeight, targetMime, targetKB * 1024);
+          blob = encoded.blob;
+          if (!encoded.metTarget) {
+            bitmap.close();
+            throw new EngineError(
+              'CONVERSION_FAILED',
+              `Couldn't get ${file.name} under ${targetKB} KB (smallest was ${Math.ceil(encoded.blob.size / 1024)} KB). Try a larger size or WebP/JPG.`
+            );
+          }
+        } else if (typeof OffscreenCanvas !== 'undefined') {
           const offscreen = new OffscreenCanvas(targetWidth, targetHeight);
           const offCtx = offscreen.getContext('2d');
           if (!offCtx) throw new EngineError('CONVERSION_FAILED', 'Failed to create 2D canvas context.');
