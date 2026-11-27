@@ -56,7 +56,6 @@ export interface QueueState {
     toolId: string,
     defaults: Record<string, string | number | boolean>
   ) => void;
-  cancelItem: (toolId: string, itemId: string) => void;
   startConversion: (toolId: string) => Promise<void>;
   downloadAllZip: (toolId: string) => Promise<void>;
 }
@@ -197,15 +196,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         },
       };
     });
-  },
-
-  cancelItem: (toolId: string, itemId: string) => {
-    const current = get().items[toolId] || [];
-    const item = current.find((i) => i.id === itemId);
-    if (item?.abortController) {
-      item.abortController.abort();
-    }
-    get().updateItem(toolId, itemId, { status: 'cancelled' });
   },
 
   startConversion: async (toolId: string) => {

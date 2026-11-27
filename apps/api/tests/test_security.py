@@ -102,3 +102,28 @@ def test_verify_access_code(monkeypatch: pytest.MonkeyPatch) -> None:
         "headers": [(b"x-access-code", b"secret-passphrase")],
     }
     verify_access_code(Request(scope_correct))  # Should not raise
+
+
+def test_download_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    import time
+
+    from app.core.security import make_download_token, verify_download_access
+
+    monkeypatch.setattr(settings, "ACCESS_CODE", None)
+    assert make_download_token("job1", time.time() + 60) is None
+
+    monkeypatch.setattr(settings, "ACCESS_CODE", "secret")
+    token = make_download_token("job1", time.time() + 60)
+    assert token
+
+    def req(query: str) -> Request:
+        return Request({"type": "http", "headers": [], "query_string": query.encode()})
+
+    verify_download_access(req(f"token={token}"), "job1")
+    for query, job in [(f"token={token}", "job2"), ("token=garbage", "job1"), ("", "job1")]:
+        with pytest.raises(AppError):
+            verify_download_access(req(query), job)
+
+    expired = make_download_token("job1", time.time() - 1)
+    with pytest.raises(AppError):
+        verify_download_access(req(f"token={expired}"), "job1")

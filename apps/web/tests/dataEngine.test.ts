@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dataEngine, getPreviewRows } from '@/features/engines/dataEngine';
+import { dataEngine, getPreviewRows, loadWorkbook } from '@/features/engines/dataEngine';
 
 describe('Data Engine', () => {
   it('converts CSV to JSON', async () => {
@@ -104,5 +104,12 @@ describe('Data Engine', () => {
     expect(JSON.parse(await (all?.blob as Blob).text())).toEqual({ One: [{ k: 1 }], Two: [{ k: 2 }] });
     const [first] = await dataEngine.run([file], { sheet: 'first' }, 'json', { onProgress: () => {} });
     expect(JSON.parse(await (first?.blob as Blob).text())).toEqual([{ k: 1 }]);
+  });
+});
+
+describe('loadWorkbook', () => {
+  it('parses a file once and shares it between preview and convert', () => {
+    const file = new File(['a,b\n1,2'], 'shared.csv', { type: 'text/csv' });
+    expect(loadWorkbook(file)).toBe(loadWorkbook(file));
   });
 });

@@ -55,3 +55,6 @@ Thumbs.db
 
 # Docker
 .docker/
+
+# TypeScript incremental build info
+*.tsbuildinfo

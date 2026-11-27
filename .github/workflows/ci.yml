@@ -38,7 +38,7 @@ jobs:
       - name: Cache PDF chat model
         uses: actions/cache@v4
         with:
-          path: apps/web/public/vendor/models/Xenova/all-MiniLM-L6-v2
+          path: apps/web/public/vendor/models/751bff37182d/Xenova/all-MiniLM-L6-v2
           key: minilm-q8-751bff37182d3f1213fa05d7196b954e230abad9
 
       - name: Prepare PDF chat assets

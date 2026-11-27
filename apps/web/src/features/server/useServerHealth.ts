@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSettingsStore } from '@/features/settings/settingsStore';
 import { apiClient, type LimitsResponse } from './apiClient';
 
 export function useServerHealth() {
@@ -57,6 +58,10 @@ export function useServerHealth() {
           setServerError(false);
           if (limitsData) {
             setLimits(limitsData);
+            const settings = useSettingsStore.getState();
+            if (limitsData.accessCodeRequired && !settings.accessCode) {
+              settings.promptAccessCode();
+            }
           }
         }
       } catch {

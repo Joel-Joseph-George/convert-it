@@ -3,8 +3,6 @@
 import asyncio
 import os
 import shutil
-import signal
-import sys
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -15,6 +13,7 @@ import psutil
 from app.core.config import settings
 from app.core.errors import AppError, ErrorDetail
 from app.core.logging import logger
+from app.core.security import make_download_token
 from app.jobs.cancellation import discard as discard_cancel_flag
 from app.jobs.cancellation import request_cancel
 from app.jobs.models import JobClass, JobRecord
@@ -35,7 +34,6 @@ class JobRunner:
         self._workers: list[asyncio.Task[None]] = []
         self._running = False
         self._active_jobs: dict[str, asyncio.Task[None]] = {}
-        self._active_processes: dict[str, asyncio.subprocess.Process] = {}
         self._event_subscribers: dict[str, list[asyncio.Queue[dict[str, Any]]]] = {}
         self._engines: dict[str, EngineHandler] = {}
 
@@ -88,17 +86,6 @@ class JobRunner:
             logger.warn("cancelling_active_job_on_shutdown", job_id=job_id)
             task.cancel()
 
-        # Terminate any external subprocesses
-        for job_id, proc in list(self._active_processes.items()):
-            try:
-                if proc.returncode is None:
-                    if sys.platform != "win32":
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    else:
-                        proc.terminate()
-            except Exception as e:
-                logger.error("error_terminating_process", job_id=job_id, error=str(e))
-
         await asyncio.gather(*self._workers, return_exceptions=True)
         self._workers.clear()
 
@@ -124,14 +111,6 @@ class JobRunner:
         for q in subscribers:
             await q.put(payload)
 
-    def register_process(self, job_id: str, proc: asyncio.subprocess.Process) -> None:
-        """Register active external process for cancellation."""
-        self._active_processes[job_id] = proc
-
-    def unregister_process(self, job_id: str) -> None:
-        """Unregister completed external process."""
-        self._active_processes.pop(job_id, None)
-
     async def cancel_job(self, job_id: str) -> bool:
         """Cancel a running or queued job."""
         job = await self.store.get_job(job_id)
@@ -155,17 +134,6 @@ class JobRunner:
         if job.status == "running":
             job.cancelRequested = True
             await self.store.update_job(job)
-
-            # Terminate running process if any
-            proc = self._active_processes.get(job_id)
-            if proc and proc.returncode is None:
-                try:
-                    if sys.platform != "win32":
-                        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                    else:
-                        proc.terminate()
-                except Exception as e:
-                    logger.error("error_killing_process", job_id=job_id, error=str(e))
 
             # Cancel running asyncio task
             task = self._active_jobs.get(job_id)
@@ -311,6 +279,7 @@ class JobRunner:
             job.finishedAt = datetime.now(UTC).isoformat()
             # Set TTL timestamp for result expiration
             job.expiresAtTimestamp = time.time() + settings.JOB_RESULT_TTL_MIN * 60
+            result.downloadToken = make_download_token(job_id, job.expiresAtTimestamp)
             await self.store.update_job(job)
             await self.broadcast_event(job_id, "done", {"result": result.model_dump()})
 

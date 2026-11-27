@@ -2,9 +2,11 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
+import { vendorPaths } from './scripts/vendor-paths.mjs';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: { __VENDOR__: JSON.stringify(vendorPaths()) },
   worker: { format: 'es' },
   optimizeDeps: {
     include: ['@huggingface/transformers'],

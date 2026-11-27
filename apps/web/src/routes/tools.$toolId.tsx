@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, Play, Cpu, ShieldCheck } from 'lucide-react';
 import { getToolById } from '@/features/registry/tools';
-import { useQueueStore } from '@/features/queue/queueStore';
+import { useQueueStore, type QueueItem } from '@/features/queue/queueStore';
 import { EngineBadge } from '@/components/shared/EngineBadge';
 import { PrivacyLine } from '@/components/shared/PrivacyLine';
 import { DropZone } from '@/components/tool/DropZone';
@@ -18,6 +18,9 @@ import { ErrorAlert } from '@/components/shared/ErrorAlert';
 export const Route = createFileRoute('/tools/$toolId')({
   component: ToolPage,
 });
+
+const EMPTY_ITEMS: QueueItem[] = [];
+const EMPTY_OPTIONS: Record<string, string | number | boolean> = {};
 
 const ChatPdfPage = React.lazy(() => import('@/tools/chat-pdf/ChatPdfPage'));
 const ImageEditorPage = React.lazy(() => import('@/tools/image-editor/ImageEditorPage'));
@@ -40,19 +43,18 @@ function ToolPage(): React.ReactElement {
 function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
   const tool = getToolById(toolId);
 
-  const {
-    items,
-    selectedFormat,
-    options,
-    addFiles,
-    removeItem,
-    clearQueue,
-    setTargetFormat,
-    setOption,
-    initOptions,
-    startConversion,
-    downloadAllZip,
-  } = useQueueStore();
+  // Select only this tool's slice so progress on other tools doesn't re-render the page.
+  const toolItems = useQueueStore((s) => s.items[toolId]) ?? EMPTY_ITEMS;
+  const selectedFormat = useQueueStore((s) => s.selectedFormat[toolId]);
+  const currentOptions = useQueueStore((s) => s.options[toolId]) ?? EMPTY_OPTIONS;
+  const addFiles = useQueueStore((s) => s.addFiles);
+  const removeItem = useQueueStore((s) => s.removeItem);
+  const clearQueue = useQueueStore((s) => s.clearQueue);
+  const setTargetFormat = useQueueStore((s) => s.setTargetFormat);
+  const setOption = useQueueStore((s) => s.setOption);
+  const initOptions = useQueueStore((s) => s.initOptions);
+  const startConversion = useQueueStore((s) => s.startConversion);
+  const downloadAllZip = useQueueStore((s) => s.downloadAllZip);
 
   const { isWakingUp, serverError, limits } = useServerHealth();
 
@@ -66,9 +68,7 @@ function ConverterPage({ toolId }: { toolId: string }): React.ReactElement {
     (isServerTool && limits?.maxUploadMB
       ? limits.maxUploadMB
       : tool?.limits.maxFileSizeMB) ?? 25;
-  const currentFormat = selectedFormat[toolId] || tool?.outputs[0]?.value || '';
-  const currentOptions = options[toolId] || {};
-  const toolItems = items[toolId] || [];
+  const currentFormat = selectedFormat || tool?.outputs[0]?.value || '';
 
   React.useEffect(() => {
     if (tool && tool.options.length > 0) {

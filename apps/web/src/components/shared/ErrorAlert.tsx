@@ -2,6 +2,7 @@ import * as React from 'react';
 import { AlertCircle, AlertTriangle } from 'lucide-react';
 import { AppError, errorToView } from '@/features/server/errorToView';
 import { Button } from '@/components/ui/button';
+import { useSettingsStore } from '@/features/settings/settingsStore';
 import { cn } from '@/lib/utils';
 
 export interface ErrorAlertProps {
@@ -54,7 +55,11 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => onAction?.(view.actionKind)}
+            onClick={() =>
+              view.actionKind === 'access-code'
+                ? useSettingsStore.getState().promptAccessCode()
+                : onAction?.(view.actionKind)
+            }
             className="text-xs"
           >
             {view.actionLabel}

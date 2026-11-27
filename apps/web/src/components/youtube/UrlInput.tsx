@@ -3,6 +3,7 @@ import { Link as LinkIcon, ArrowRight, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/shared/ErrorAlert';
 import { cn } from '@/lib/utils';
+import { isYouTubeUrl } from '@/features/youtube/url';
 
 export interface UrlInputProps {
   /** Controlled value; when omitted the input manages its own state. */
@@ -28,27 +29,6 @@ export const UrlInput: React.FC<UrlInputProps> = ({
   };
   const [error, setError] = React.useState<string | null>(null);
 
-  const isValidYoutubeUrl = (input: string): boolean => {
-    try {
-      const parsed = new URL(input.startsWith('http') ? input : `https://${input}`);
-      const validHosts = [
-        'youtube.com',
-        'www.youtube.com',
-        'm.youtube.com',
-        'music.youtube.com',
-        'youtu.be',
-      ];
-      const host = parsed.hostname.toLowerCase();
-      if (!validHosts.includes(host)) return false;
-      // Require something that can identify a video, not just the bare domain.
-      return host === 'youtu.be'
-        ? parsed.pathname.length > 1
-        : parsed.searchParams.has('v') || /^\/(shorts|live)\/./.test(parsed.pathname);
-    } catch {
-      return false;
-    }
-  };
-
   const handlePaste = async (): Promise<void> => {
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
@@ -68,7 +48,7 @@ export const UrlInput: React.FC<UrlInputProps> = ({
     const trimmed = url.trim();
     if (!trimmed) return;
 
-    if (!isValidYoutubeUrl(trimmed)) {
+    if (!isYouTubeUrl(trimmed)) {
       setError('ERR_INVALID_URL');
       return;
     }

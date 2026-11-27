@@ -15,8 +15,9 @@ dependencies = [
     "httpx>=0.28.1",
     "python-multipart>=0.0.20",
     "redis>=5.0.0",
-    # [default] pulls in yt-dlp-ejs (YouTube challenge solver scripts used with Deno)
-    "yt-dlp[default]>=2026.10.26",
+    # [default] pulls in yt-dlp-ejs (YouTube challenge solver scripts used with Deno).
+    # Pinned on purpose: bump with scripts/bump_ytdlp.sh (or the weekly yt-dlp workflow).
+    "yt-dlp[default]==2026.10.26",
     "pdf2docx>=0.5.8",
     "pdfplumber>=0.11.0",
     "openpyxl>=3.1.0",

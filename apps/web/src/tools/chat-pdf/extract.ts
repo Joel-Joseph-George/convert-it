@@ -1,7 +1,7 @@
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
 import type { PageText } from './chunker';
 
-GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs';
+GlobalWorkerOptions.workerSrc = `${__VENDOR__.pdfjs}/pdf.worker.min.mjs`;
 
 export async function openPdf(data: ArrayBuffer): Promise<PDFDocumentProxy> {
   const task = getDocument({ data, useSystemFonts: true });

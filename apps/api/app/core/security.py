@@ -1,8 +1,11 @@
 """Security, IP detection, Filename sanitization, and Magic-byte inspection."""
 
+import hashlib
+import hmac
 import os
 import re
 import secrets
+import time
 import unicodedata
 
 import filetype
@@ -47,6 +50,40 @@ def verify_access_code(request: Request) -> None:
             message="The provided access code is invalid.",
             status_code=401,
         )
+
+
+def _download_signature(job_id: str, expires: int, key: str) -> str:
+    message = f"{job_id}:{expires}".encode()
+    return hmac.new(key.encode(), message, hashlib.sha256).hexdigest()
+
+
+def make_download_token(job_id: str, expires_at: float) -> str | None:
+    """Create a download token valid until `expires_at` (None when no access code is set)."""
+    if not settings.ACCESS_CODE:
+        return None
+    expires = int(expires_at)
+    return f"{expires}.{_download_signature(job_id, expires, settings.ACCESS_CODE)}"
+
+
+def verify_download_access(request: Request, job_id: str) -> None:
+    """Allow a download with either the X-Access-Code header or a valid `token` query param."""
+    if not settings.ACCESS_CODE or request.headers.get("x-access-code"):
+        verify_access_code(request)
+        return
+
+    token = request.query_params.get("token", "")
+    expires_str, _, signature = token.partition(".")
+    if expires_str.isdigit() and signature:
+        expires = int(expires_str)
+        expected = _download_signature(job_id, expires, settings.ACCESS_CODE)
+        if time.time() <= expires and secrets.compare_digest(signature, expected):
+            return
+
+    raise AppError(
+        code="AUTH_REQUIRED",
+        message="This download link is invalid or has expired.",
+        status_code=401,
+    )
 
 
 def sanitize_filename(filename: str, max_length: int = 200) -> str:

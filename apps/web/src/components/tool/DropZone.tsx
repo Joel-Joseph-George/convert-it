@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Upload, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePasteFiles } from '@/lib/usePasteFiles';
 
 export interface DropZoneProps {
   onFilesAdded: (files: File[]) => void;
@@ -24,6 +25,12 @@ export const DropZone: React.FC<DropZoneProps> = ({
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+
+  usePasteFiles((pasted) => {
+    const first = pasted[0];
+    if (multiple) onFilesAdded(pasted);
+    else if (first) onFilesAdded([first]);
+  });
 
   const acceptString = acceptedExtensions
     .map((ext) => `.${ext.replace(/^\./, '')}`)
@@ -155,6 +162,9 @@ export const DropZone: React.FC<DropZoneProps> = ({
 
       <p className="mt-4 text-xs text-muted-foreground">
         Up to {maxFileSizeMB} MB per file • {acceptedExtensions.slice(0, 5).join(', ').toUpperCase()}
+      </p>
+      <p className="mt-1 hidden text-[11px] text-muted-foreground sm:block">
+        You can also paste files with Ctrl/⌘+V
       </p>
     </div>
   );

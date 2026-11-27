@@ -5,8 +5,12 @@ export type Theme = 'light' | 'dark' | 'system';
 interface SettingsState {
   theme: Theme;
   accessCode: string;
+  /** Whether the "enter access code" dialog is open. */
+  accessPromptOpen: boolean;
   setTheme: (theme: Theme) => void;
   setAccessCode: (code: string) => void;
+  promptAccessCode: () => void;
+  closeAccessPrompt: () => void;
 }
 
 const THEME_STORAGE_KEY = 'convertit_theme';
@@ -58,6 +62,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }
     set({ accessCode });
   },
+  accessPromptOpen: false,
+  promptAccessCode: () => set({ accessPromptOpen: true }),
+  closeAccessPrompt: () => set({ accessPromptOpen: false }),
 }));
 
 // Initialize theme on load and listen for system preference changes

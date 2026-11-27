@@ -1,4 +1,10 @@
-import { API_BASE_URL, ApiClientError, getHeaders } from '@/features/server/apiClient';
+import {
+  API_BASE_URL,
+  ApiClientError,
+  getHeaders,
+  promptOnAuthError,
+} from '@/features/server/apiClient';
+import { readSseEvents } from '@/features/server/sse';
 import type { chatPayload } from './prompt';
 
 const interrupted = () =>
@@ -12,43 +18,20 @@ export async function readAnswer(
   stream: ReadableStream<Uint8Array>,
   token: (text: string) => void,
 ) {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let pending = '';
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) throw interrupted();
-      pending += decoder.decode(value, { stream: true });
-      let separator: RegExpExecArray | null;
-      while ((separator = /\r?\n\r?\n/.exec(pending))) {
-        const frame = pending.slice(0, separator.index).split(/\r?\n/);
-        pending = pending.slice(separator.index + separator[0].length);
-        const event = frame
-          .find((l) => l.startsWith('event:'))
-          ?.slice(6)
-          .trim();
-        if (!event) continue;
-        const json = frame
-          .filter((l) => l.startsWith('data:'))
-          .map((l) => l.slice(5).trimStart())
-          .join('\n');
-        let data;
-        try {
-          data = JSON.parse(json);
-        } catch {
-          throw interrupted();
-        }
-        if (event === 'done') return;
-        if (event === 'error' && data?.error) throw new ApiClientError(data.error);
-        if (event !== 'token' || typeof data?.token !== 'string') throw interrupted();
-        token(data.token);
-      }
+  for await (const { event, data: raw } of readSseEvents(stream)) {
+    if (event === 'message') continue;
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw interrupted();
     }
-  } finally {
-    await reader.cancel().catch(() => undefined);
-    reader.releaseLock();
+    if (event === 'done') return;
+    if (event === 'error' && data?.error) throw new ApiClientError(data.error);
+    if (event !== 'token' || typeof data?.token !== 'string') throw interrupted();
+    token(data.token);
   }
+  throw interrupted();
 }
 
 export async function ask(
@@ -64,9 +47,9 @@ export async function ask(
   });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new ApiClientError(
-      body?.error ?? { code: 'UPSTREAM_ERROR', message: 'Could not start the answer.' },
-    );
+    const error = body?.error ?? { code: 'UPSTREAM_ERROR', message: 'Could not start the answer.' };
+    promptOnAuthError(error);
+    throw new ApiClientError(error);
   }
   if (!res.body) throw interrupted();
   await readAnswer(res.body, token);

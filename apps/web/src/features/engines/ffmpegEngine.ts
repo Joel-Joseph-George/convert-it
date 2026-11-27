@@ -23,8 +23,8 @@ async function getFFmpeg(ctx: ConvertContext): Promise<FFmpeg> {
     // Blob URLs let the worker import the core in both the Vite dev server and production
     // (dev refuses to serve /public files as JS modules).
     await ffmpegInstance.load({
-      coreURL: await toBlobURL('/vendor/ffmpeg/ffmpeg-core.js', 'text/javascript'),
-      wasmURL: await toBlobURL('/vendor/ffmpeg/ffmpeg-core.wasm', 'application/wasm'),
+      coreURL: await toBlobURL(`${__VENDOR__.ffmpeg}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${__VENDOR__.ffmpeg}/ffmpeg-core.wasm`, 'application/wasm'),
     });
     isLoaded = true;
     return ffmpegInstance;
