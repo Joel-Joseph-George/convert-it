@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Analytics } from '@vercel/analytics/react';
 import { routeTree } from './routeTree.gen';
 import { initInstallPrompt } from './features/pwa/installPrompt';
 import './styles/globals.css';
@@ -33,6 +34,7 @@ if (rootElement && !rootElement.innerHTML) {
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Analytics />
       </QueryClientProvider>
     </React.StrictMode>
   );
