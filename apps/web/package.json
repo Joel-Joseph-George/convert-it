@@ -32,7 +32,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-router": "^1.114.0",
-    "@tesseract.js-data/eng": "^1.0.0",
+    "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "exifr": "^7.1.3",
