@@ -111,10 +111,9 @@
 
 ### 📄 Document & OCR Enhancements
 - [x] **Chat with PDF.** Search selectable text on-device and stream answers from Gemini with clickable page citations. The browser caches document indexes by file hash. The API admits each stream as a light job.
-- [ ] **More image tools (#18):** background removal and an EXIF viewer/stripper. Crop, resize and compress-to-size shipped in the Image Editor.
-- [ ] **More PDF tools (#17):** compress, reorder, OCR, sign.
-- [ ] **Optional Client/Server OCR for Scanned PDFs:**
-  - When a PDF fails with `NO_TABLES_FOUND`, offer an optional OCR pass (e.g., Tesseract.js in the browser or server-side OCR) to extract text and tables from image-only scans.
+- [x] **More image tools (#18):** Remove background (portraits, MODNet in the browser), Remove photo metadata (lossless EXIF/GPS strip with a preview of what's found), social-media size presets in the editor, and target-size mode in Compress image.
+- [x] **More PDF tools (#17):** Organize pages (drag-and-drop reorder, rotate, delete), Compress, OCR to searchable PDF or text (tesseract.js, English), Sign (drawn/typed signature, text, date), Protect and Unlock (qpdf WASM, AES-256). All in the browser.
+- [ ] **OCR for PDF to Excel:** when a PDF fails with `NO_TABLES_FOUND`, point to OCR PDF first (OCR itself now exists in the browser). More OCR languages could be added as optional downloads.
 - [ ] **EPUB & E-Book Converters:**
   - Add EPUB to PDF / EPUB to Markdown tools using lightweight browser parsers.
 

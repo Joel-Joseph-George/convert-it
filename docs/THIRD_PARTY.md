@@ -29,7 +29,7 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `pdfjs-dist` | `^6.5.438` | Apache-2.0 | PDF rendering to images and raw text extraction |
 | `@huggingface/transformers` | `^4.3.2` | Apache-2.0 | Local tokenizer and embedding pipeline |
 | Xenova/all-MiniLM-L6-v2 | `751bff3` | Apache-2.0 | Self-hosted quantized ONNX weights for document retrieval. [Model card](https://huggingface.co/Xenova/all-MiniLM-L6-v2) |
-| `xlsx` | `^0.18.5` | Apache-2.0 | Tabular data conversions (Excel, CSV, JSON) |
+| `xlsx` (SheetJS CDN build) | `0.20.3` | Apache-2.0 | Tabular data conversions (Excel, CSV, JSON) |
 | `fflate` | `^0.8.3` | MIT | High-performance client-side ZIP compression |
 | `marked` | `^18.2.1` | MIT | Markdown to HTML compiler |
 | `turndown` | `^7.2.5` | MIT | HTML to Markdown converter |
@@ -37,6 +37,12 @@ This document tracks all third-party libraries, tools, and dependencies used acr
 | `@ffmpeg/ffmpeg` | `^0.12.15` | MIT | WebAssembly FFmpeg runner for browser audio/video |
 | `@ffmpeg/util` | `^0.12.2` | MIT | FFmpeg utilities for file fetching and memory management |
 | `@ffmpeg/core` | `^0.12.10` | GPL-2.0-or-later | Single-threaded FFmpeg WebAssembly core binary |
+| `tesseract.js` (+ `tesseract.js-core`) | `7.0.0` | Apache-2.0 | OCR PDF: text recognition in a Web Worker |
+| `@tesseract.js-data/eng` | `1.0.0` | MIT (package), Apache-2.0 (tessdata_best `eng.traineddata`) | English recognition data, self-hosted |
+| `@neslinesli93/qpdf-wasm` | `0.3.1` | ISC (package), Apache-2.0 (qpdf 12) | Protect / Unlock PDF (AES-256 encryption) |
+| `exifr` | `7.1.3` | MIT | Reads EXIF/GPS for the metadata preview |
+| `@fontsource/dancing-script` | `5.3.0` | OFL-1.1 | Handwriting font for typed signatures |
+| Xenova/modnet | `fa2fa54` | Apache-2.0 | Self-hosted portrait matting ONNX model for Remove background. [Model card](https://huggingface.co/Xenova/modnet) |
 
 ### Development Dependencies
 

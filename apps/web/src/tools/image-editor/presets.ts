@@ -16,6 +16,31 @@ export const ASPECT_PRESETS: AspectPreset[] = [
   { id: '9:16', label: '9:16', ratio: 9 / 16 },
 ];
 
+/** Fixed output sizes for social media posts, covers and thumbnails. */
+export interface SocialPreset {
+  id: string;
+  label: string;
+  width: number;
+  height: number;
+}
+
+export const SOCIAL_PRESETS: SocialPreset[] = [
+  { id: 'ig-square', label: 'Instagram post (square)', width: 1080, height: 1080 },
+  { id: 'ig-portrait', label: 'Instagram post (portrait)', width: 1080, height: 1350 },
+  { id: 'story', label: 'Story / Reel (Instagram, TikTok)', width: 1080, height: 1920 },
+  { id: 'x-post', label: 'X / Twitter post', width: 1600, height: 900 },
+  { id: 'fb-post', label: 'Facebook / LinkedIn post', width: 1200, height: 630 },
+  { id: 'yt-thumb', label: 'YouTube thumbnail', width: 1280, height: 720 },
+  { id: 'fb-cover', label: 'Facebook cover', width: 1640, height: 624 },
+  { id: 'li-banner', label: 'LinkedIn banner', width: 1584, height: 396 },
+  { id: 'x-header', label: 'X / Twitter header', width: 1500, height: 500 },
+  { id: 'avatar', label: 'Profile picture', width: 800, height: 800 },
+];
+
+export function getSocialPreset(id: string): SocialPreset | undefined {
+  return SOCIAL_PRESETS.find((p) => p.id === id);
+}
+
 export interface PassportPreset {
   id: string;
   label: string;

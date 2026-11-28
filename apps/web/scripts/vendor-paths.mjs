@@ -12,9 +12,18 @@ const webDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 export const MODEL_REVISION = "751bff37182d3f1213fa05d7196b954e230abad9";
 
-/** Directory of an installed package (workspace or repo-root node_modules). */
-export function packageDir(name) {
+// Background removal (portrait matting), Apache-2.0.
+export const BG_MODEL_ID = "Xenova/modnet";
+export const BG_MODEL_REVISION = "fa2fa546052fba4c08921230a26cc69a333fca12";
+
+/**
+ * Directory of an installed package (workspace or repo-root node_modules).
+ * With `parent`, a copy nested under that package wins (e.g. tesseract.js-core
+ * pinned by tesseract.js).
+ */
+export function packageDir(name, parent) {
   const candidates = [
+    ...(parent ? [path.join(packageDir(parent), "node_modules", name)] : []),
     path.join(webDir, "node_modules", name),
     path.join(webDir, "..", "..", "node_modules", name),
   ];
@@ -25,9 +34,12 @@ export function packageDir(name) {
   return dir;
 }
 
-function version(name) {
+function version(name, parent) {
   return JSON.parse(
-    fs.readFileSync(path.join(packageDir(name), "package.json"), "utf8"),
+    fs.readFileSync(
+      path.join(packageDir(name, parent), "package.json"),
+      "utf8",
+    ),
   ).version;
 }
 
@@ -38,6 +50,9 @@ export function vendorPaths() {
     pdfjs: `/vendor/pdfjs/${version("pdfjs-dist")}`,
     onnx: `/vendor/onnx/${version("onnxruntime-web")}`,
     models: `/vendor/models/${MODEL_REVISION.slice(0, 12)}`,
+    bgModels: `/vendor/bg-models/${BG_MODEL_REVISION.slice(0, 12)}`,
+    tesseract: `/vendor/tesseract/${version("tesseract.js")}-${version("tesseract.js-core", "tesseract.js")}`,
+    qpdf: `/vendor/qpdf/${version("@neslinesli93/qpdf-wasm")}`,
   };
 }
 

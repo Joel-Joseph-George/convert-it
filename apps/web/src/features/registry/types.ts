@@ -21,6 +21,8 @@ export interface ToolOption {
   step?: number;
   showWhen?: { optionId: string; equals: unknown };
   advanced?: boolean;
+  /** Passwords and the like: shown as a password field, never saved to presets or history. */
+  secret?: boolean;
 }
 
 export interface ToolDefinition {

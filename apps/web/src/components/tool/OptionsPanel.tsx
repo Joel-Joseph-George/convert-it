@@ -101,7 +101,8 @@ export const OptionsPanel: React.FC<OptionsPanelProps> = ({
       default:
         return (
           <input
-            type="text"
+            type={opt.secret ? 'password' : 'text'}
+            autoComplete={opt.secret ? 'off' : undefined}
             id={`${idPrefix}-${opt.id}`}
             value={String(val)}
             onChange={(e) => onChange(opt.id, e.target.value)}

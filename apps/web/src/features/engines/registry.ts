@@ -9,6 +9,11 @@ const ENGINE_LOADERS: Record<string, () => Promise<BrowserEngine>> = {
   'heic-engine': async () => (await import('./heicEngine')).heicEngine,
   'pdf-engine': async () => (await import('./pdfEngine')).pdfEngine,
   'pdf-render': async () => (await import('./pdfEngine')).pdfRenderEngine,
+  'pdf-compress': async () => (await import('./pdfToolsEngine')).pdfCompressEngine,
+  'pdf-security': async () => (await import('./pdfToolsEngine')).pdfSecurityEngine,
+  'pdf-ocr': async () => (await import('./pdfToolsEngine')).pdfOcrEngine,
+  'image-metadata': async () => (await import('./imageToolsEngine')).imageMetadataEngine,
+  'bg-removal': async () => (await import('./imageToolsEngine')).bgRemovalEngine,
   'ffmpeg-audio': async () => (await import('./ffmpegEngine')).ffmpegAudioEngine,
   'ffmpeg-video': async () => (await import('./ffmpegEngine')).ffmpegVideoEngine,
 };

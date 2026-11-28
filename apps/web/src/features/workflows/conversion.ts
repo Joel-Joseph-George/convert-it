@@ -21,6 +21,15 @@ export function defaultStep(tool: ToolDefinition): Step {
   };
 }
 
+/** Tools with their own page instead of the convert queue, so they can't be chained. */
+export const CUSTOM_PAGE_TOOLS = new Set([
+  'chat-pdf',
+  'image-editor',
+  'youtube',
+  'organize-pdf',
+  'sign-pdf',
+]);
+
 export function nextTools(previous: Step): ToolDefinition[] {
   const extensions =
     previous.format === 'same'
@@ -28,7 +37,7 @@ export function nextTools(previous: Step): ToolDefinition[] {
       : [previous.format];
   return TOOLS.filter(
     (tool) =>
-      !['chat-pdf', 'image-editor', 'youtube'].includes(tool.id) &&
+      !CUSTOM_PAGE_TOOLS.has(tool.id) &&
       extensions.length > 0 &&
       extensions.every((ext) => tool.inputs.extensions.includes(ext))
   );

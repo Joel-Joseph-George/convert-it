@@ -14,4 +14,7 @@ declare const __VENDOR__: {
   pdfjs: string;
   onnx: string;
   models: string;
+  bgModels: string;
+  tesseract: string;
+  qpdf: string;
 };

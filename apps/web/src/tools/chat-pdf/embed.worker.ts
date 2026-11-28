@@ -1,6 +1,7 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers';
 import { chunkPages, type Chunk, type PageText } from './chunker';
 import { retrievalQuery } from './retrieve';
+import { configureLocalOnnx } from '@/lib/onnxEnv';
 
 export interface Index {
   chunks: Chunk[];
@@ -18,20 +19,7 @@ async function loadEngine() {
   if (engine) return engine;
   postMessage({ progress: 'Loading local embedding model…' });
   const { env, pipeline } = await import('@huggingface/transformers');
-  env.cacheKey = CACHE_KEY;
-  env.allowRemoteModels = true;
-  env.allowLocalModels = true;
-  env.localModelPath = __VENDOR__.models + '/';
-  const wasm = env.backends.onnx.wasm;
-  if (wasm) {
-    // Keep the runtime's platform choice while serving both files from this site.
-    const baseline =
-      typeof wasm.wasmPaths === 'object' && String(wasm.wasmPaths.mjs).endsWith('threaded.mjs');
-    const name = baseline ? 'ort-wasm-simd-threaded' : 'ort-wasm-simd-threaded.asyncify';
-    const base = new URL(`${__VENDOR__.onnx}/${name}`, self.location.origin).href;
-    wasm.wasmPaths = { mjs: base + '.mjs', wasm: base + '.wasm' };
-    wasm.numThreads = 1;
-  }
+  configureLocalOnnx(env, __VENDOR__.models, CACHE_KEY, true);
   if (device === 'webgpu') {
     const gpu = (navigator as Navigator & { gpu: { requestAdapter(): Promise<unknown> } }).gpu;
     if (!(await gpu.requestAdapter().catch(() => null))) device = 'wasm';

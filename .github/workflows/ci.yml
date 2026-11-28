@@ -41,7 +41,13 @@ jobs:
           path: apps/web/public/vendor/models/751bff37182d/Xenova/all-MiniLM-L6-v2
           key: minilm-q8-751bff37182d3f1213fa05d7196b954e230abad9
 
-      - name: Prepare PDF chat assets
+      - name: Cache background removal model
+        uses: actions/cache@v4
+        with:
+          path: apps/web/public/vendor/bg-models/fa2fa546052f/Xenova/modnet
+          key: modnet-fp32-fa2fa546052fba4c08921230a26cc69a333fca12
+
+      - name: Prepare PDF chat and model assets
         run: npm run chat-assets -w web
 
       - name: Playwright E2E tests
