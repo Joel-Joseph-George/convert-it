@@ -1,9 +1,12 @@
 """Health and Diagnostic Endpoints."""
 
 import time
+from pathlib import Path
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
+
+from app.core.config import settings
 
 try:
     import yt_dlp.version
@@ -25,7 +28,21 @@ class HealthResponse(BaseModel):
     version: str
     uptimeSec: int
     ytdlpVersion: str | None
+    ytCookiesFileAvailable: bool
     queue: QueueStatus
+
+
+def _cookie_file_available() -> bool:
+    if not settings.YT_COOKIES_FILE:
+        return False
+    try:
+        path = Path(settings.YT_COOKIES_FILE)
+        if not path.is_file():
+            return False
+        with path.open("rb") as source:
+            return bool(source.read(1))
+    except OSError:
+        return False
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -45,5 +62,6 @@ async def get_health(request: Request) -> HealthResponse:
         version="0.2.0",
         uptimeSec=max(0, int(time.time() - startup_time)),
         ytdlpVersion=YTDLP_VERSION,
+        ytCookiesFileAvailable=_cookie_file_available(),
         queue=QueueStatus(running=running_count, queued=queued_count),
     )

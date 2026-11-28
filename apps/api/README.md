@@ -16,6 +16,9 @@ To get it working from a hosted server:
    browser profile you don't mind using, upload it as a Render *Secret File*
    (e.g. `/etc/secrets/yt-cookies.txt`), and set `YT_COOKIES_FILE` to that path.
    Cookies expire, so you'll need to refresh them every so often.
+   Each operation uses an in-memory copy so the mount can stay read-only.
+   `GET /api/health` reports `ytCookiesFileAvailable` when the configured file
+   is readable and nonempty. Session validity requires an upstream check.
 3. **Proxy (optional)** — if cookies aren't enough, set `YT_PROXY` to a residential proxy.
 4. **Keep yt-dlp fresh** — YouTube changes often; redeploy (rebuild the image) to pick up
    a newer `yt-dlp` when downloads start failing.

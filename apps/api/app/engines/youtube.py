@@ -1,9 +1,11 @@
 """YouTube Extraction and Transcoding Engine backed by yt-dlp and ffmpeg."""
 
 import asyncio
+import io
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import yt_dlp
@@ -47,10 +49,14 @@ def base_ydl_options() -> dict[str, Any]:
         "no_warnings": True,
     }
     if settings.YT_COOKIES_FILE:
-        if os.path.exists(settings.YT_COOKIES_FILE):
-            opts["cookiefile"] = settings.YT_COOKIES_FILE
-        else:
-            logger.warn("yt_cookies_file_missing", path=settings.YT_COOKIES_FILE)
+        try:
+            # yt-dlp writes back on close. Give each operation its own writable stream.
+            contents = Path(settings.YT_COOKIES_FILE).read_text(encoding="utf-8")
+            opts["cookiefile"] = io.StringIO(contents)
+        except FileNotFoundError:
+            logger.warning("yt_cookies_file_missing")
+        except (OSError, UnicodeError):
+            logger.warning("yt_cookies_file_unreadable")
     if settings.YT_PROXY:
         opts["proxy"] = settings.YT_PROXY
     return opts
