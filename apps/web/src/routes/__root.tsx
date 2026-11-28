@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { Analytics } from '@vercel/analytics/react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Footer } from '@/components/layout/Footer';
 import { AccessCodeDialog } from '@/features/settings/AccessCodeDialog';
@@ -18,6 +19,7 @@ function RootComponent(): React.ReactElement {
       </main>
       <Footer />
       <AccessCodeDialog />
+      <Analytics />
     </div>
   );
 }
