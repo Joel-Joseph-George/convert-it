@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { routeTree } from './routeTree.gen';
+import { initInstallPrompt } from './features/pwa/installPrompt';
 import './styles/globals.css';
 
 const queryClient = new QueryClient({
@@ -36,6 +37,8 @@ if (rootElement && !rootElement.innerHTML) {
     </React.StrictMode>
   );
 }
+
+initInstallPrompt();
 
 // Installable PWA: offline shell, cached vendor assets and "Share → ConvertIt".
 // Production only, so the dev server never serves stale modules from the cache.
