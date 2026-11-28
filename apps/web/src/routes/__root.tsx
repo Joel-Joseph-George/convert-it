@@ -19,7 +19,7 @@ function RootComponent(): React.ReactElement {
       </main>
       <Footer />
       <AccessCodeDialog />
-      <Analytics />
+      {import.meta.env.PROD && <Analytics />}
     </div>
   );
 }
